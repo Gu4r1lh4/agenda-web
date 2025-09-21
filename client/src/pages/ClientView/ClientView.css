@@ -1,0 +1,317 @@
+/* client/src/pages/ClientView/ClientView.css */
+/* Estilos para a interface do cliente - clean e moderno */
+
+:root {
+  --primary-color: #4CAF50;
+  --primary-hover: #45a049;
+  --secondary-color: #f4f4f4;
+  --text-color: #333;
+  --border-color: #ddd;
+  --error-color: #f44336;
+  --success-color: #4CAF50;
+  --shadow: 0 2px 4px rgba(0,0,0,0.1);
+  --shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.client-view {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.header {
+  background: white;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.company-logo {
+  height: 50px;
+  width: auto;
+}
+
+.header h1 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 28px;
+}
+
+/* Container principal */
+.booking-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 30px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.booking-container h2 {
+  color: var(--text-color);
+  margin-bottom: 30px;
+  text-align: center;
+  font-size: 32px;
+}
+
+/* Seleção de data */
+.date-selection {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.date-selection label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-color);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.date-input {
+  padding: 12px 20px;
+  font-size: 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.date-input:hover,
+.date-input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: var(--shadow);
+}
+
+/* Slots de horário */
+.slots-container {
+  margin-bottom: 30px;
+}
+
+.slots-container h3 {
+  color: var(--text-color);
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+  font-style: italic;
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.slot-button {
+  padding: 12px;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.slot-button:hover {
+  background: var(--secondary-color);
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.slot-button.selected {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.no-slots {
+  text-align: center;
+  color: #666;
+  padding: 20px;
+  background: var(--secondary-color);
+  border-radius: 5px;
+}
+
+/* Formulário */
+.booking-form {
+  background: var(--secondary-color);
+  padding: 25px;
+  border-radius: 8px;
+}
+
+.booking-form h3 {
+  color: var(--text-color);
+  margin-bottom: 20px;
+  font-size: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  font-size: 16px;
+  transition: all 0.3s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 15px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s;
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  animation: slideUp 0.3s;
+}
+
+.modal-content h2 {
+  color: var(--success-color);
+  margin-bottom: 20px;
+}
+
+.booking-details {
+  background: var(--secondary-color);
+  padding: 15px;
+  border-radius: 5px;
+  margin: 20px 0;
+}
+
+.booking-details p {
+  margin: 8px 0;
+}
+
+.confirmation-note {
+  color: #666;
+  font-style: italic;
+  margin: 15px 0;
+}
+
+.close-button {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.close-button:hover {
+  background: var(--primary-hover);
+}
+
+/* Animações */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .booking-container {
+    margin: 20px;
+    padding: 20px;
+  }
+  
+  .slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .header h1 {
+    font-size: 24px;
+  }
+  
+  .booking-container h2 {
+    font-size: 24px;
+  }
+}
