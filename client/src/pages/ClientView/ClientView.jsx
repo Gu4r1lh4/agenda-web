@@ -1,5 +1,5 @@
 // client/src/pages/ClientView/ClientView.jsx
-// Interface principal para o cliente fazer agendamentos
+// Interface do cliente com horários ocupados desabilitados
 
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -16,7 +16,6 @@ const ClientView = () => {
   const [loading, setLoading] = useState(false);
   const [socket, setSocket] = useState(null);
   
-  // Dados do formulário
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,11 +24,10 @@ const ClientView = () => {
     notes: ''
   });
   
-  // Modal de confirmação
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingResult, setBookingResult] = useState(null);
+  const [error, setError] = useState(null);
   
-  // Configurações da empresa (vem do backend)
   const [companySettings, setCompanySettings] = useState({
     name: 'Agenda Inteligente',
     logo: null,
@@ -37,75 +35,93 @@ const ClientView = () => {
     services: ['Consulta', 'Retorno', 'Avaliação', 'Procedimento']
   });
 
-  // Conecta ao WebSocket quando o componente monta
   useEffect(() => {
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
     
-    // Escuta atualizações em tempo real
+    // REQUISITO 3: Escuta atualizações em tempo real para recarregar slots
     newSocket.on('appointment-update', (update) => {
       console.log('Atualização em tempo real:', update);
       
-      // Se alguém agendou/cancelou, atualiza os slots disponíveis
+      // Se um agendamento foi criado ou cancelado para a data selecionada, atualiza slots
       if (selectedDate) {
-        fetchAvailableSlots(selectedDate);
+        if (update.type === 'created' || update.type === 'cancelled' || update.type === 'status-changed') {
+          // Recarrega os slots disponíveis
+          fetchAvailableSlots(selectedDate);
+        }
       }
     });
     
-    // Carrega configurações da empresa
     fetchCompanySettings();
     
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [selectedDate]); // Adiciona selectedDate como dependência
   
-  // Busca as configurações customizadas da empresa
   const fetchCompanySettings = async () => {
     try {
       const response = await axios.get(`${API_URL}/settings`);
       setCompanySettings(response.data);
-      
-      // Aplica a cor primária customizada
       document.documentElement.style.setProperty('--primary-color', response.data.primaryColor);
     } catch (error) {
       console.error('Erro ao buscar configurações:', error);
     }
   };
   
-  // Busca slots disponíveis quando a data muda
+  // REQUISITO 3: Busca slots com status de disponibilidade
   const fetchAvailableSlots = async (date) => {
     setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(`${API_URL}/appointments/available-slots`, {
-        params: { date, duration: 60 }
+        params: { date }
       });
-      setAvailableSlots(response.data.slots);
+      
+      console.log('Slots recebidos:', response.data);
+      
+      // A resposta agora inclui o status de cada slot
+      setAvailableSlots(response.data.slots || []);
+      
+      // Remove seleção se o slot selecionado não está mais disponível
+      if (selectedSlot && response.data.slots) {
+        const stillAvailable = response.data.slots.find(
+          s => s.start === selectedSlot.start && s.available
+        );
+        if (!stillAvailable) {
+          setSelectedSlot(null);
+        }
+      }
     } catch (error) {
       console.error('Erro ao buscar horários:', error);
       setAvailableSlots([]);
+      setError('Erro ao carregar horários disponíveis');
     } finally {
       setLoading(false);
     }
   };
   
-  // Quando seleciona uma data
   const handleDateChange = (e) => {
     const date = e.target.value;
     setSelectedDate(date);
     setSelectedSlot(null);
+    setError(null);
     
     if (date) {
       fetchAvailableSlots(date);
     }
   };
   
-  // Quando seleciona um horário
+  // REQUISITO 3: Só permite selecionar slots disponíveis
   const handleSlotSelect = (slot) => {
+    if (!slot.available) {
+      setError('Este horário não está disponível');
+      return;
+    }
     setSelectedSlot(slot);
+    setError(null);
   };
   
-  // Atualiza os dados do formulário
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -114,16 +130,25 @@ const ClientView = () => {
     }));
   };
   
-  // Envia o agendamento
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!selectedSlot) {
-      alert('Por favor, selecione um horário');
+      setError('Por favor, selecione um horário');
+      return;
+    }
+    
+    // REQUISITO 3: Verifica novamente se o slot ainda está disponível
+    if (!selectedSlot.available) {
+      setError('Este horário não está mais disponível');
+      setSelectedSlot(null);
+      fetchAvailableSlots(selectedDate);
       return;
     }
     
     setLoading(true);
+    setError(null);
+    
     try {
       const appointmentData = {
         client: {
@@ -140,52 +165,69 @@ const ClientView = () => {
       
       const response = await axios.post(`${API_URL}/appointments`, appointmentData);
       
-      setBookingResult(response.data);
-      setShowConfirmation(true);
-      
-      // Notifica outros usuários via WebSocket
-      if (socket) {
-        socket.emit('appointment-created', response.data.appointment);
+      if (response.data.success) {
+        setBookingResult(response.data);
+        setShowConfirmation(true);
+        
+        // Notifica outros usuários via WebSocket
+        if (socket) {
+          socket.emit('appointment-created', response.data.appointment);
+        }
+        
+        // Limpa o formulário
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          service: '',
+          notes: ''
+        });
+        setSelectedSlot(null);
+        
+        // Atualiza slots disponíveis
+        fetchAvailableSlots(selectedDate);
       }
-      
-      // Limpa o formulário
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        service: '',
-        notes: ''
-      });
-      setSelectedSlot(null);
-      
-      // Atualiza slots disponíveis
-      fetchAvailableSlots(selectedDate);
     } catch (error) {
       console.error('Erro ao criar agendamento:', error);
-      alert(error.response?.data?.error || 'Erro ao criar agendamento. Tente novamente.');
+      if (error.response?.status === 409) {
+        setError('Este horário foi reservado por outro cliente. Por favor, escolha outro horário.');
+        setSelectedSlot(null);
+        fetchAvailableSlots(selectedDate);
+      } else {
+        setError(error.response?.data?.error || 'Erro ao criar agendamento. Tente novamente.');
+      }
     } finally {
       setLoading(false);
     }
   };
   
-  // Define data mínima (hoje)
   const today = new Date().toISOString().split('T')[0];
   
   return (
     <div className="client-view">
-      {/* Header com logo e nome da empresa */}
       <header className="header">
         {companySettings.logo && (
           <img src={companySettings.logo} alt="Logo" className="company-logo" />
         )}
         <h1>{companySettings.name}</h1>
-        <a href="/login" className="admin-link">Área Admin</a>
       </header>
       
       <div className="booking-container">
         <h2>Agende seu horário</h2>
         
-        {/* Seleção de data */}
+        {error && (
+          <div style={{
+            padding: '12px',
+            marginBottom: '20px',
+            background: '#ffebee',
+            color: '#c62828',
+            borderRadius: '5px',
+            borderLeft: '4px solid #f44336'
+          }}>
+            {error}
+          </div>
+        )}
+        
         <div className="date-selection">
           <label htmlFor="date">Escolha a data:</label>
           <input
@@ -198,32 +240,63 @@ const ClientView = () => {
           />
         </div>
         
-        {/* Horários disponíveis */}
         {selectedDate && (
           <div className="slots-container">
             <h3>Horários disponíveis</h3>
             {loading ? (
               <div className="loading">Carregando horários...</div>
             ) : availableSlots.length > 0 ? (
-              <div className="slots-grid">
-                {availableSlots.map((slot, index) => (
-                  <button
-                    key={index}
-                    className={`slot-button ${selectedSlot === slot ? 'selected' : ''}`}
-                    onClick={() => handleSlotSelect(slot)}
-                  >
-                    {slot.start} - {slot.end}
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="slots-legend" style={{ marginBottom: '15px', fontSize: '14px' }}>
+                  <span style={{ marginRight: '20px' }}>
+                    <span style={{ display: 'inline-block', width: '12px', height: '12px', background: companySettings.primaryColor, marginRight: '5px' }}></span>
+                    Disponível
+                  </span>
+                  <span>
+                    <span style={{ display: 'inline-block', width: '12px', height: '12px', background: '#ccc', marginRight: '5px' }}></span>
+                    Ocupado
+                  </span>
+                </div>
+                <div className="slots-grid">
+                  {availableSlots.map((slot, index) => (
+                    <button
+                      key={index}
+                      className={`slot-button ${
+                        selectedSlot?.start === slot.start ? 'selected' : ''
+                      } ${!slot.available ? 'occupied' : ''}`}
+                      onClick={() => handleSlotSelect(slot)}
+                      disabled={!slot.available}
+                      style={{
+                        cursor: slot.available ? 'pointer' : 'not-allowed',
+                        opacity: slot.available ? 1 : 0.5,
+                        background: !slot.available ? '#f5f5f5' : 
+                                   selectedSlot?.start === slot.start ? companySettings.primaryColor :
+                                   'white',
+                        color: !slot.available ? '#999' :
+                               selectedSlot?.start === slot.start ? 'white' :
+                               '#333',
+                        borderColor: !slot.available ? '#ddd' : 
+                                    selectedSlot?.start === slot.start ? companySettings.primaryColor :
+                                    '#ddd',
+                        textDecoration: !slot.available ? 'line-through' : 'none'
+                      }}
+                    >
+                      {slot.start} - {slot.end}
+                      {!slot.available && <span style={{ display: 'block', fontSize: '10px', marginTop: '2px' }}>Ocupado</span>}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
+                  {availableSlots.filter(s => s.available).length} de {availableSlots.length} horários disponíveis
+                </div>
+              </>
             ) : (
               <p className="no-slots">Nenhum horário disponível nesta data.</p>
             )}
           </div>
         )}
         
-        {/* Formulário de dados */}
-        {selectedSlot && (
+        {selectedSlot && selectedSlot.available && (
           <form className="booking-form" onSubmit={handleSubmit}>
             <h3>Seus dados</h3>
             
@@ -299,7 +372,6 @@ const ClientView = () => {
         )}
       </div>
       
-      {/* Modal de confirmação */}
       {showConfirmation && bookingResult && (
         <div className="modal-overlay" onClick={() => setShowConfirmation(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
