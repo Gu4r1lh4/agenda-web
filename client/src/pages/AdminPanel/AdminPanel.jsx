@@ -18,7 +18,6 @@ const AdminPanel = () => {
   const [message, setMessage] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   
-  // REQUISITO 2: Estado para filtro de data no dashboard
   const [dashboardDate, setDashboardDate] = useState(new Date().toISOString().split('T')[0]);
   const [dashboardAppointments, setDashboardAppointments] = useState([]);
   
@@ -34,26 +33,21 @@ const AdminPanel = () => {
     slotDuration: 60
   });
 
-  // REQUISITO 1: Função para recalcular estatísticas localmente
   const recalculateStats = useCallback((appointmentsList) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Filtra agendamentos de hoje
     const todayAppointments = appointmentsList.filter(apt => {
       const aptDate = new Date(apt.date);
       return aptDate >= today && aptDate < tomorrow;
     });
     
-    // Conta confirmados de hoje
     const todayConfirmed = todayAppointments.filter(apt => apt.status === 'confirmed').length;
     
-    // Conta pendentes
     const pendingConfirmation = appointmentsList.filter(apt => apt.status === 'scheduled').length;
     
-    // Atualiza stats
     setStats(prev => ({
       ...prev,
       today: {
@@ -75,7 +69,8 @@ const AdminPanel = () => {
     
     newSocket.on('appointment-update', (update) => {
       console.log('Atualização em tempo real:', update);
-      fetchAppointments();
+      if (activeTab === 'appointments') fetchAppointments();
+      if (activeTab === 'dashboard') fetchDashboardAppointments(dashboardDate);
       fetchStats();
     });
     
@@ -84,13 +79,14 @@ const AdminPanel = () => {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [dashboardDate, activeTab]);
   
   const loadInitialData = async () => {
     await Promise.all([
       fetchAppointments(),
       fetchSettings(),
-      fetchStats()
+      fetchStats(),
+      fetchDashboardAppointments(dashboardDate)
     ]);
   };
   
@@ -120,8 +116,6 @@ const AdminPanel = () => {
       const appointmentsList = response.data.appointments || response.data;
       setAppointments(appointmentsList);
       
-      // REQUISITO 1: Recalcula estatísticas com os novos dados
-      recalculateStats(appointmentsList);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       setAppointments([]);
@@ -130,7 +124,6 @@ const AdminPanel = () => {
     }
   };
   
-  // REQUISITO 2: Função para buscar agendamentos por data específica no dashboard
   const fetchDashboardAppointments = async (date) => {
     try {
       const response = await axios.get(`${API_URL}/appointments`, {
@@ -144,7 +137,6 @@ const AdminPanel = () => {
     }
   };
   
-  // REQUISITO 2: Effect para buscar agendamentos quando a data do dashboard mudar
   useEffect(() => {
     if (activeTab === 'dashboard' && dashboardDate) {
       fetchDashboardAppointments(dashboardDate);
@@ -168,7 +160,6 @@ const AdminPanel = () => {
     }
   };
   
-  // REQUISITO 1: Função atualizada para mudança de status com atualização local imediata
   const updateAppointmentStatus = async (appointmentId, newStatus) => {
     try {
       const response = await axios.patch(
@@ -179,36 +170,34 @@ const AdminPanel = () => {
       if (response.data.success || response.data.appointment) {
         const updatedAppointment = response.data.appointment;
         
-        // REQUISITO 1: Atualiza a lista local imediatamente
-        setAppointments(prev => {
-          const newList = prev.map(apt => 
-            apt._id === appointmentId 
-              ? { ...apt, ...updatedAppointment, status: newStatus }
-              : apt
-          );
-          // Recalcula estatísticas com a nova lista
-          recalculateStats(newList);
-          return newList;
-        });
-        
-        // Atualiza também a lista do dashboard se estiver visível
-        setDashboardAppointments(prev => 
-          prev.map(apt => 
-            apt._id === appointmentId 
-              ? { ...apt, ...updatedAppointment, status: newStatus }
-              : apt
-          )
+        const updateList = (list) => list.map(apt => 
+          apt._id === appointmentId 
+            ? { ...apt, ...updatedAppointment, status: newStatus }
+            : apt
         );
+
+        setAppointments(prev => updateList(prev));
+        setDashboardAppointments(prev => updateList(prev));
         
-        // Notifica via WebSocket
-        if (socket) {
-          socket.emit('appointment-updated', { appointmentId, status: newStatus });
+        // REQUISITO 2: Atualização do contador "Confirmados Hoje"
+        if (newStatus === 'confirmed') {
+            const confirmedDate = new Date(updatedAppointment.date).toISOString().split('T')[0];
+            if (confirmedDate === dashboardDate) {
+                // Incrementa o contador de confirmados para a data selecionada
+                const confirmedOnDate = dashboardAppointments.filter(apt => apt.status === 'confirmed' || apt._id === appointmentId).length;
+                setStats(prev => ({
+                    ...prev,
+                    today: {
+                        ...prev.today,
+                        confirmed: confirmedOnDate
+                    }
+                }));
+            }
         }
         
         showMessage(`Status atualizado para ${newStatus} com sucesso!`, 'success');
         
-        // Busca estatísticas atualizadas do servidor
-        setTimeout(fetchStats, 500);
+        setTimeout(fetchStats, 500); 
       }
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
@@ -225,25 +214,16 @@ const AdminPanel = () => {
       const response = await axios.delete(`${API_URL}/appointments/${appointmentId}`);
       
       if (response.data.success) {
-        // REQUISITO 1: Remove da lista local e recalcula
-        setAppointments(prev => {
-          const newList = prev.filter(apt => apt._id !== appointmentId);
-          recalculateStats(newList);
-          return newList;
-        });
-        
-        setDashboardAppointments(prev => prev.filter(apt => apt._id !== appointmentId));
-        
-        if (socket) {
-          socket.emit('appointment-cancelled', appointmentId);
-        }
+        const removeFromList = (list) => list.filter(apt => apt._id !== appointmentId);
+        setAppointments(prev => removeFromList(prev));
+        setDashboardAppointments(prev => removeFromList(prev));
         
         showMessage('Agendamento cancelado com sucesso', 'success');
         setTimeout(fetchStats, 500);
       }
     } catch (error) {
       console.error('Erro ao cancelar:', error);
-      showMessage('Erro ao cancelar agendamento', 'error');
+      showMessage(error.response?.data?.error || 'Erro ao cancelar agendamento', 'error');
     }
   };
   
@@ -252,14 +232,14 @@ const AdminPanel = () => {
     window.location.href = '/';
   };
   
-  // Função auxiliar para renderizar um card de agendamento
   const renderAppointmentCard = (appointment) => (
     <div key={appointment._id} style={{ 
       border: '1px solid #ddd', 
       borderRadius: '8px', 
       padding: '15px', 
       marginBottom: '10px',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      opacity: appointment.status === 'cancelled' ? 0.6 : 1
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <h3 style={{ margin: 0 }}>{appointment.client?.name}</h3>
@@ -295,15 +275,7 @@ const AdminPanel = () => {
         {appointment.status === 'scheduled' && (
           <button
             onClick={() => updateAppointmentStatus(appointment._id, 'confirmed')}
-            style={{ 
-              padding: '6px 12px', 
-              background: '#4CAF50', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
+            className="btn-small" style={{ background: '#4CAF50', color: 'white' }}
           >
             Confirmar
           </button>
@@ -311,28 +283,21 @@ const AdminPanel = () => {
         {appointment.status === 'confirmed' && (
           <button
             onClick={() => updateAppointmentStatus(appointment._id, 'completed')}
-            style={{ 
-              padding: '6px 12px', 
-              background: '#2196F3', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer'
-            }}
+            className="btn-small" style={{ background: '#2196F3', color: 'white' }}
           >
             Concluir
           </button>
         )}
+        {/* REQUISITO 3: Bloquear cancelamento de agendamentos concluídos */}
         {appointment.status !== 'cancelled' && (
           <button
             onClick={() => cancelAppointment(appointment._id)}
+            disabled={appointment.status === 'completed'}
+            className="btn-small" 
             style={{ 
-              padding: '6px 12px', 
-              background: '#f44336', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer'
+              background: appointment.status === 'completed' ? '#ccc' : '#f44336', 
+              color: 'white',
+              cursor: appointment.status === 'completed' ? 'not-allowed' : 'pointer'
             }}
           >
             Cancelar
@@ -342,44 +307,26 @@ const AdminPanel = () => {
     </div>
   );
 
+  // REQUISITO 1: Calcula contadores para a data do dashboard
+  const dashboardTotal = dashboardAppointments.length;
+  const dashboardConfirmed = dashboardAppointments.filter(apt => apt.status === 'confirmed').length;
+
   return (
     <div className="page-container" style={{ background: '#f5f5f5', minHeight: '100vh' }}>
       <div className="container">
-        {/* Header com contadores atualizados em tempo real */}
         <div className="main-header" style={{ background: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h1>{settings.companyName || 'Painel Administrativo'}</h1>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
             {stats && (
               <>
-                <span style={{ 
-                  padding: '5px 10px', 
-                  background: '#e3f2fd', 
-                  color: '#1976d2', 
-                  borderRadius: '20px', 
-                  fontSize: '14px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  📅 Hoje: {stats.today?.total || 0}
+                <span className="badge" style={{ background: '#e3f2fd', color: '#1976d2' }}>
+                  📅 Agendados (dia selecionado): {activeTab === 'dashboard' ? dashboardTotal : stats.today?.total || 0}
                 </span>
-                <span style={{ 
-                  padding: '5px 10px', 
-                  background: '#e8f5e9', 
-                  color: '#388e3c', 
-                  borderRadius: '20px', 
-                  fontSize: '14px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  ✅ Confirmados: {stats.today?.confirmed || 0}
+                <span className="badge" style={{ background: '#e8f5e9', color: '#388e3c' }}>
+                  ✅ Confirmados (dia selecionado): {activeTab === 'dashboard' ? dashboardConfirmed : stats.today?.confirmed || 0}
                 </span>
-                <span style={{ 
-                  padding: '5px 10px', 
-                  background: '#fff3e0', 
-                  color: '#f57c00', 
-                  borderRadius: '20px', 
-                  fontSize: '14px',
-                  transition: 'all 0.3s ease'
-                }}>
-                  ⏳ Pendentes: {stats.summary?.pendingConfirmation || 0}
+                <span className="badge" style={{ background: '#fff3e0', color: '#f57c00' }}>
+                  ⏳ Pendentes (total): {stats.summary?.pendingConfirmation || 0}
                 </span>
               </>
             )}
@@ -389,113 +336,57 @@ const AdminPanel = () => {
           </div>
         </div>
         
-        {/* Mensagens */}
         {message && (
-          <div style={{
-            padding: '15px',
-            marginBottom: '20px',
-            borderRadius: '5px',
-            background: message.type === 'success' ? '#e8f5e9' : message.type === 'error' ? '#ffebee' : '#fff3e0',
-            color: message.type === 'success' ? '#2e7d32' : message.type === 'error' ? '#c62828' : '#f57c00',
-            borderLeft: `4px solid ${message.type === 'success' ? '#4CAF50' : message.type === 'error' ? '#f44336' : '#ff9800'}`
-          }}>
+          <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'}`}>
             {message.text}
           </div>
         )}
         
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #f0f0f0' }}>
-          <button 
-            style={{
-              padding: '12px 24px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal',
-              color: activeTab === 'dashboard' ? settings.primaryColor : '#666',
-              borderBottom: activeTab === 'dashboard' ? `3px solid ${settings.primaryColor}` : 'none',
-              marginBottom: '-2px'
-            }}
-            onClick={() => setActiveTab('dashboard')}
-          >
+        <div className="tabs-container">
+          <button className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
             Dashboard
           </button>
-          <button 
-            style={{
-              padding: '12px 24px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '16px',
-              fontWeight: activeTab === 'appointments' ? 'bold' : 'normal',
-              color: activeTab === 'appointments' ? settings.primaryColor : '#666',
-              borderBottom: activeTab === 'appointments' ? `3px solid ${settings.primaryColor}` : 'none',
-              marginBottom: '-2px'
-            }}
-            onClick={() => setActiveTab('appointments')}
-          >
+          <button className={`tab-button ${activeTab === 'appointments' ? 'active' : ''}`} onClick={() => setActiveTab('appointments')}>
             Agendamentos
           </button>
         </div>
         
-        {/* Conteúdo */}
         <div style={{ background: 'white', borderRadius: '8px', padding: '30px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          {/* DASHBOARD TAB com filtro de data */}
           {activeTab === 'dashboard' && (
             <div>
               <h2>Dashboard - Visão Geral</h2>
               
-              {/* REQUISITO 2: Seletor de data para o dashboard */}
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ marginRight: '10px', fontWeight: 'bold' }}>
+                <label className="form-label" style={{ marginRight: '10px' }}>
                   Filtrar por data:
                 </label>
                 <input
                   type="date"
                   value={dashboardDate}
                   onChange={(e) => setDashboardDate(e.target.value)}
-                  style={{ 
-                    padding: '8px', 
-                    border: '1px solid #ddd', 
-                    borderRadius: '4px',
-                    fontSize: '14px'
-                  }}
+                  className="form-input" style={{ maxWidth: '200px' }}
                 />
               </div>
               
-              {/* Cards de estatísticas */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px' }}>
-                <div style={{ background: '#f5f5f5', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-                  <h3 style={{ color: settings.primaryColor, fontSize: '32px', margin: '0' }}>
-                    {stats?.today?.total || 0}
-                  </h3>
-                  <p style={{ color: '#666', marginTop: '5px' }}>Agendamentos Hoje</p>
+                 <div className="card" style={{ background: '#f5f5f5', textAlign: 'center' }}>
+                    <h3 style={{ color: settings.primaryColor, fontSize: '32px', margin: '0' }}>{dashboardTotal}</h3>
+                    <p style={{ color: '#666', marginTop: '5px' }}>Agendamentos na Data</p>
                 </div>
-                
-                <div style={{ background: '#e8f5e9', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-                  <h3 style={{ color: '#388e3c', fontSize: '32px', margin: '0' }}>
-                    {stats?.today?.confirmed || 0}
-                  </h3>
-                  <p style={{ color: '#666', marginTop: '5px' }}>Confirmados Hoje</p>
+                <div className="card" style={{ background: '#e8f5e9', textAlign: 'center' }}>
+                    <h3 style={{ color: '#388e3c', fontSize: '32px', margin: '0' }}>{dashboardConfirmed}</h3>
+                    <p style={{ color: '#666', marginTop: '5px' }}>Confirmados na Data</p>
                 </div>
-                
-                <div style={{ background: '#fff3e0', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-                  <h3 style={{ color: '#f57c00', fontSize: '32px', margin: '0' }}>
-                    {stats?.summary?.pendingConfirmation || 0}
-                  </h3>
-                  <p style={{ color: '#666', marginTop: '5px' }}>Aguardando Confirmação</p>
+                <div className="card" style={{ background: '#fff3e0', textAlign: 'center' }}>
+                    <h3 style={{ color: '#f57c00', fontSize: '32px', margin: '0' }}>{stats?.summary?.pendingConfirmation || 0}</h3>
+                    <p style={{ color: '#666', marginTop: '5px' }}>Aguardando Confirmação</p>
                 </div>
-                
-                <div style={{ background: '#e3f2fd', padding: '20px', borderRadius: '8px', textAlign: 'center' }}>
-                  <h3 style={{ color: '#1976d2', fontSize: '32px', margin: '0' }}>
-                    {stats?.month?.total || 0}
-                  </h3>
-                  <p style={{ color: '#666', marginTop: '5px' }}>Total Este Mês</p>
+                <div className="card" style={{ background: '#e3f2fd', textAlign: 'center' }}>
+                    <h3 style={{ color: '#1976d2', fontSize: '32px', margin: '0' }}>{stats?.month?.total || 0}</h3>
+                    <p style={{ color: '#666', marginTop: '5px' }}>Total Este Mês</p>
                 </div>
               </div>
               
-              {/* REQUISITO 2: Lista de agendamentos filtrados por data */}
               <div>
                 <h3>Agendamentos do dia {new Date(dashboardDate + 'T12:00:00').toLocaleDateString('pt-BR')}</h3>
                 {dashboardAppointments.length === 0 ? (
@@ -511,27 +402,20 @@ const AdminPanel = () => {
             </div>
           )}
           
-          {/* APPOINTMENTS TAB */}
           {activeTab === 'appointments' && (
             <div>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <input
                   type="date"
                   value={selectedDate}
-                  onChange={(e) => {
-                    setSelectedDate(e.target.value);
-                    setTimeout(fetchAppointments, 100);
-                  }}
-                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="form-input"
                 />
                 
                 <select
                   value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setTimeout(fetchAppointments, 100);
-                  }}
-                  style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="form-select"
                 >
                   <option value="all">Todos</option>
                   <option value="scheduled">Agendados</option>
@@ -542,14 +426,14 @@ const AdminPanel = () => {
                 
                 <button 
                   onClick={fetchAppointments}
-                  style={{ padding: '8px 16px', background: settings.primaryColor, color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  className="btn btn-primary"
                 >
-                  🔄 Atualizar
+                  🔄 Buscar
                 </button>
               </div>
               
               {loading ? (
-                <div>Carregando agendamentos...</div>
+                <div className="loading">Carregando agendamentos...</div>
               ) : appointments.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', background: '#f5f5f5', borderRadius: '8px' }}>
                   <p>Nenhum agendamento encontrado.</p>
