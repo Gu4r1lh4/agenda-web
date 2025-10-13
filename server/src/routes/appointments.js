@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
 
+// ADICIONE ESTA LINHA PARA TESTE
+console.log('✅ Arquivo de rotas de agendamento (appointments.js) foi carregado!'); 
+
 // GET - Buscar horários disponíveis
 router.get('/available-slots', async (req, res) => {
   try {
@@ -43,10 +46,10 @@ router.post('/cancel-by-client', async (req, res) => {
             return res.status(400).json({ error: 'Dados insuficientes para o cancelamento.' });
         }
         
-        const startOfDay = new Date(date);
-        startOfDay.setUTCHours(0, 0, 0, 0);
-        const endOfDay = new Date(date);
-        endOfDay.setUTCHours(23, 59, 59, 999);
+        // CORREÇÃO: Tratar a data para ignorar fuso horário (timezone)
+        const [year, month, day] = date.split('-').map(Number);
+        const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
 
         const appointment = await Appointment.findOne({
             date: { $gte: startOfDay, $lte: endOfDay },
@@ -70,6 +73,7 @@ router.post('/cancel-by-client', async (req, res) => {
 
         res.json({ success: true, message: 'Agendamento cancelado com sucesso!' });
     } catch (error) {
+        console.error("Erro no cancelamento:", error); // Adicionado para depuração
         res.status(500).json({ error: 'Erro interno ao tentar cancelar o agendamento.' });
     }
 });

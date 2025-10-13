@@ -441,6 +441,57 @@ app.post('/api/appointments', async (req, res) => {
   }
 });
 
+// =================================================================
+// ROTA ADICIONADA PARA CANCELAMENTO PELO CLIENTE
+// =================================================================
+app.post('/api/appointments/cancel-by-client', async (req, res) => {
+    try {
+        const { date, startTime, email } = req.body;
+
+        if (!date || !startTime || !email) {
+            return res.status(400).json({ error: 'Dados insuficientes para o cancelamento.' });
+        }
+        
+        // Correção para o problema de fuso horário (timezone)
+        const [year, month, day] = date.split('-').map(Number);
+        const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+
+        const appointment = await Appointment.findOne({
+            date: { $gte: startOfDay, $lte: endOfDay },
+            startTime: startTime,
+            'client.email': { $regex: new RegExp(`^${email.trim()}$`, 'i') },
+            status: { $in: ['scheduled', 'confirmed'] } // Apenas cancela se estiver agendado ou confirmado
+        });
+
+        if (!appointment) {
+            return res.status(404).json({ error: 'Nenhum agendamento ativo encontrado. Verifique os dados e tente novamente.' });
+        }
+        
+        // Atualiza o status para 'cancelled'
+        appointment.status = 'cancelled';
+        appointment.updatedAt = new Date();
+        await appointment.save();
+
+        // Notifica via WebSocket que o agendamento foi cancelado
+        io.emit('appointment-update', {
+            type: 'cancelled',
+            appointmentId: appointment._id,
+            freedSlot: { // Informa qual horário foi liberado
+                date: appointment.date,
+                startTime: appointment.startTime,
+                endTime: appointment.endTime
+            }
+        });
+
+        res.json({ success: true, message: 'Agendamento cancelado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao cancelar agendamento pelo cliente:', error);
+        res.status(500).json({ error: 'Erro interno ao tentar cancelar o agendamento.' });
+    }
+});
+
+
 // MELHORADO: Atualizar status com resposta completa
 app.patch('/api/appointments/:id/status', async (req, res) => {
   try {
