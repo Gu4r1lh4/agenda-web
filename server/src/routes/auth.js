@@ -1,10 +1,9 @@
-// routes/auth.js
+// server/src/routes/auth.js
 const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
 
-router.post('/login', async (req, res) => {
-  // Lógica de login aqui
-  res.json({ token: 'jwt-token-aqui' });
-});
+// POST /api/auth/login
+router.post('/login', authController.login);
 
 module.exports = router;

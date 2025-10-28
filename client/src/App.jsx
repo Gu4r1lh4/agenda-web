@@ -4,7 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import HomePage from './pages/HomePage/HomePage';
 import ClientView from './pages/ClientView/ClientView';
 import AdminPanel from './pages/AdminPanel/AdminPanel';
-import Login from './pages/Login/Login';
+import Login from './pages/Login/Login'; // (Admin Login)
+// import ClientLogin from './pages/ClientLogin/ClientLogin'; // REMOVIDO
 import './styles/global.css'; // Importa os estilos unificados
 
 // Componente para proteger rotas administrativas
@@ -23,7 +24,10 @@ function App() {
         {/* Área do cliente */}
         <Route path="/client" element={<ClientView />} />
         
-        {/* Login administrativo */}
+        {/* Login do Cliente - ROTA REMOVIDA */}
+        {/* <Route path="/client-login" element={<ClientLogin />} /> */}
+
+        {/* Login administrativo (agora separado) */}
         <Route path="/login" element={<Login />} />
         
         {/* Painel administrativo (protegido) */}

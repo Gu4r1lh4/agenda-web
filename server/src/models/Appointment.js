@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const Settings = require('./Settings'); 
 
 const appointmentSchema = new mongoose.Schema({
-  client: { name: { type: String, required: true }, email: { type: String, required: true }, phone: { type: String, required: true } },
+  client: { 
+    name: { type: String, required: true }, 
+    email: { type: String, required: true }, 
+    phone: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null } // CAMPO NOVO
+  },
   date: { type: Date, required: true },
   startTime: { type: String, required: true },
   endTime: { type: String, required: true },
@@ -21,6 +26,7 @@ appointmentSchema.statics.isTimeSlotAvailable = async function(date, startTime, 
   return !existingAppointment;
 };
 
+// MODIFICADO para incluir appointmentId
 appointmentSchema.statics.getAvailableSlots = async function(date) {
     let settings = await Settings.findOne();
     let workingHours = { start: '08:00', end: '18:00' };
@@ -42,11 +48,15 @@ appointmentSchema.statics.getAvailableSlots = async function(date) {
     for (let hour = startHour; hour < endHour; hour++) {
         const startTime = `${String(hour).padStart(2, '0')}:00`;
         const endTime = `${String(hour + 1).padStart(2, '0')}:00`;
-        const isOccupied = appointmentsOnDate.some(apt => apt.startTime === startTime);
+        
+        const matchingApt = appointmentsOnDate.find(apt => apt.startTime === startTime);
+        const isOccupied = !!matchingApt;
+        
         slots.push({
             start: startTime,
             end: endTime,
-            available: !isOccupied
+            available: !isOccupied,
+            appointmentId: matchingApt ? matchingApt._id : null // Envia o ID para o front-end
         });
     }
     return slots;

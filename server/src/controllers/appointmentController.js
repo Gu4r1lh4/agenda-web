@@ -1,5 +1,6 @@
 const Appointment = require('../models/Appointment');
 const Settings = require('../models/Settings');
+const emailService = require('../services/emailService'); // REQ 2.1
 
 // Função auxiliar para validar se um horário está dentro do horário de funcionamento
 const isWithinWorkingHours = (time, settings) => {
@@ -10,9 +11,9 @@ const isWithinWorkingHours = (time, settings) => {
   const startInMinutes = startHours * 60 + startMinutes;
   
   const [endHours, endMinutes] = settings.workingHours.end.split(':').map(Number);
-  const endInMinutes = endHours * 60 + endMinutes;
+  const endInMinutes = endHours * 60 - 1; // Ajuste para permitir até o último minuto
   
-  return timeInMinutes >= startInMinutes && timeInMinutes < endInMinutes;
+  return timeInMinutes >= startInMinutes && timeInMinutes <= endInMinutes;
 };
 
 // Função auxiliar para calcular horário final (1 hora depois)
@@ -25,6 +26,7 @@ const calculateEndTime = (startTime) => {
 // Criar novo agendamento
 exports.createAppointment = async (req, res) => {
   try {
+    // req.user pode vir de um middleware de autenticação opcional
     const { clientName, clientEmail, clientPhone, date, time, service } = req.body;
 
     // Validar campos obrigatórios
@@ -55,34 +57,40 @@ exports.createAppointment = async (req, res) => {
     // Calcular horário final (sempre 1 hora de duração)
     const endTime = calculateEndTime(time);
 
-    // Verificar se já existe agendamento para este horário exato
-    const existingAppointment = await Appointment.findOne({
-      date,
-      time,
-      status: { $ne: 'Cancelado' } // Ignora agendamentos cancelados
-    });
+    // Verificar se já existe agendamento para este horário (usando método do Model)
+    const isAvailable = await Appointment.isTimeSlotAvailable(new Date(date), time, endTime);
 
-    if (existingAppointment) {
+    if (!isAvailable) {
       return res.status(400).json({ 
         success: false, 
         message: 'Horário já está ocupado' 
       });
     }
 
-    // Criar o agendamento com duração fixa de 1 hora
+    // Criar o agendamento (MODIFICADO para o schema correto)
     const appointment = new Appointment({
-      clientName,
-      clientEmail,
-      clientPhone,
-      date,
-      time,
-      endTime, // Sempre 1 hora depois
+      client: {
+        name: clientName,
+        email: clientEmail,
+        phone: clientPhone,
+        userId: req.user ? req.user._id : null // REQ 1.7
+      },
+      date: new Date(date),
+      startTime: time,
+      endTime: endTime,
       service,
-      status: 'Pendente',
-      createdAt: new Date()
+      status: 'scheduled' // 'Pendente' não está no enum, 'scheduled' é o default
     });
 
     await appointment.save();
+
+    // REQ 2.1: Enviar email de confirmação
+    try {
+      await emailService.sendConfirmationEmail(appointment);
+    } catch (emailError) {
+      console.error('Falha ao enviar email, mas agendamento foi criado:', emailError);
+      // Não reverter a transação por falha de e-mail, apenas logar.
+    }
 
     res.status(201).json({ 
       success: true, 
@@ -106,14 +114,22 @@ exports.getAppointments = async (req, res) => {
     const filter = {};
 
     if (date) {
-      filter.date = date;
+      // Correção para buscar pela data independente do timezone
+      const [year, month, day] = date.split('-').map(Number);
+      const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+      filter.date = { $gte: startOfDay, $lte: endOfDay };
     }
 
     if (status && status !== 'Todos') {
       filter.status = status;
+    } else {
+      // Não mostrar cancelados por padrão, a menos que "Todos" seja selecionado
+      filter.status = { $ne: 'cancelled' };
     }
 
-    const appointments = await Appointment.find(filter).sort({ date: 1, time: 1 });
+
+    const appointments = await Appointment.find(filter).sort({ date: 1, startTime: 1 });
 
     res.status(200).json({ 
       success: true, 
@@ -141,48 +157,14 @@ exports.getAvailableSlots = async (req, res) => {
       });
     }
 
-    // Buscar configurações
-    const settings = await Settings.findOne();
-    if (!settings) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Configurações do sistema não encontradas' 
-      });
-    }
-
-    // Gerar todos os horários possíveis (blocos de 1 hora)
-    const availableSlots = [];
-    const [startHours, startMinutes] = settings.workingHours.start.split(':').map(Number);
-    const [endHours, endMinutes] = settings.workingHours.end.split(':').map(Number);
-
-    for (let hour = startHours; hour < endHours; hour++) {
-      const timeSlot = `${String(hour).padStart(2, '0')}:${String(startMinutes).padStart(2, '0')}`;
-      availableSlots.push({
-        time: timeSlot,
-        endTime: calculateEndTime(timeSlot),
-        available: true
-      });
-    }
-
-    // Buscar agendamentos já existentes para esta data
-    const bookedAppointments = await Appointment.find({
-      date,
-      status: { $ne: 'Cancelado' }
-    });
-
-    // Marcar horários ocupados
-    bookedAppointments.forEach(appointment => {
-      const slot = availableSlots.find(s => s.time === appointment.time);
-      if (slot) {
-        slot.available = false;
-        slot.appointmentId = appointment._id;
-      }
-    });
-
+    // Usar a função do Model que já está correta
+    const availableSlots = await Appointment.getAvailableSlots(date);
+    
     res.status(200).json({ 
       success: true, 
       slots: availableSlots 
     });
+    
   } catch (error) {
     console.error('Erro ao buscar horários disponíveis:', error);
     res.status(500).json({ 
@@ -193,7 +175,7 @@ exports.getAvailableSlots = async (req, res) => {
   }
 };
 
-// Atualizar status do agendamento
+// Atualizar status do agendamento (Admin)
 exports.updateAppointmentStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -205,8 +187,13 @@ exports.updateAppointmentStatus = async (req, res) => {
         message: 'Status é obrigatório' 
       });
     }
+    
+    // Validar status contra o Enum do Model
+    const validStatus = ['scheduled', 'confirmed', 'completed', 'cancelled'];
+    if (!validStatus.includes(status)) {
+        return res.status(400).json({ success: false, message: 'Status inválido.' });
+    }
 
-    // Buscar o agendamento
     const appointment = await Appointment.findById(id);
     
     if (!appointment) {
@@ -217,7 +204,7 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     // REGRA: Não permitir cancelamento de agendamentos concluídos
-    if (appointment.status === 'Concluído' && status === 'Cancelado') {
+    if (appointment.status === 'completed' && status === 'cancelled') {
       return res.status(400).json({ 
         success: false, 
         message: 'Não é possível cancelar um agendamento já concluído' 
@@ -225,6 +212,10 @@ exports.updateAppointmentStatus = async (req, res) => {
     }
 
     appointment.status = status;
+    if(status === 'cancelled' && !appointment.deletedAt) {
+        appointment.deletedAt = new Date();
+    }
+    
     await appointment.save();
 
     res.status(200).json({ 
@@ -247,37 +238,19 @@ exports.getDashboardStats = async (req, res) => {
   try {
     const { date } = req.query;
     
-    // Se não houver data, usar a data atual
     const targetDate = date || new Date().toISOString().split('T')[0];
+    
+    const [year, month, day] = targetDate.split('-').map(Number);
+    const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+    
+    const dateFilter = { date: { $gte: startOfDay, $lte: endOfDay } };
 
-    // Total de agendamentos para a data selecionada
-    const totalAppointments = await Appointment.countDocuments({
-      date: targetDate
-    });
-
-    // Agendamentos confirmados para a data selecionada
-    const confirmedAppointments = await Appointment.countDocuments({
-      date: targetDate,
-      status: 'Confirmado'
-    });
-
-    // Agendamentos pendentes para a data selecionada
-    const pendingAppointments = await Appointment.countDocuments({
-      date: targetDate,
-      status: 'Pendente'
-    });
-
-    // Agendamentos concluídos para a data selecionada
-    const completedAppointments = await Appointment.countDocuments({
-      date: targetDate,
-      status: 'Concluído'
-    });
-
-    // Agendamentos cancelados para a data selecionada
-    const cancelledAppointments = await Appointment.countDocuments({
-      date: targetDate,
-      status: 'Cancelado'
-    });
+    const totalAppointments = await Appointment.countDocuments(dateFilter);
+    const confirmedAppointments = await Appointment.countDocuments({ ...dateFilter, status: 'confirmed' });
+    const pendingAppointments = await Appointment.countDocuments({ ...dateFilter, status: 'scheduled' }); // 'Pendente' agora é 'scheduled'
+    const completedAppointments = await Appointment.countDocuments({ ...dateFilter, status: 'completed' });
+    const cancelledAppointments = await Appointment.countDocuments({ ...dateFilter, status: 'cancelled' });
 
     res.status(200).json({ 
       success: true, 
@@ -300,7 +273,7 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
-// Cancelar agendamento
+// Cancelar agendamento (Rota Admin /:id)
 exports.cancelAppointment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -314,15 +287,15 @@ exports.cancelAppointment = async (req, res) => {
       });
     }
 
-    // REGRA: Não permitir cancelamento de agendamentos concluídos
-    if (appointment.status === 'Concluído') {
+    if (appointment.status === 'completed') {
       return res.status(400).json({ 
         success: false, 
         message: 'Não é possível cancelar um agendamento já concluído' 
       });
     }
 
-    appointment.status = 'Cancelado';
+    appointment.status = 'cancelled';
+    appointment.deletedAt = new Date();
     await appointment.save();
 
     res.status(200).json({ 

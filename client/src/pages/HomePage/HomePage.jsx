@@ -13,7 +13,7 @@ const HomePage = () => {
           <h1>Bem-vindo ao Sistema de Agendamento</h1>
           <p>Agende e gerencie seus horários de forma rápida e fácil.</p>
           <div className="button-group">
-            <Link to="/client" className="btn btn-primary">
+            <Link to="/client" className="btn btn-primary"> {/* MODIFICADO */}
               Agendar ou Consultar Horário
             </Link>
             <Link to="/login" className="btn btn-secondary">

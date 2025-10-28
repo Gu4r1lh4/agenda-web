@@ -27,6 +27,11 @@ const getEmailTemplate = (type, data) => {
     </style>
   `;
   
+  // O 'data' deve ser o objeto 'appointment' completo
+  const clientName = data.client ? data.client.name : 'Cliente';
+  const clientEmail = data.client ? data.client.email : '';
+  const dateFormatted = data.date ? new Date(data.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/D';
+
   switch(type) {
     case 'confirmation':
       return `
@@ -36,28 +41,21 @@ const getEmailTemplate = (type, data) => {
         <body>
           <div class="container">
             <div class="header">
-              <h1>✅ Agendamento Confirmado!</h1>
+              <h1>✅ Agendamento Realizado!</h1>
             </div>
             <div class="content">
-              <p>Olá <strong>${data.client.name}</strong>,</p>
+              <p>Olá <strong>${clientName}</strong>,</p>
               <p>Seu agendamento foi realizado com sucesso!</p>
               
               <div class="details">
                 <h3>Detalhes do Agendamento:</h3>
-                <p><strong>📅 Data:</strong> ${new Date(data.date).toLocaleDateString('pt-BR')}</p>
+                <p><strong>📅 Data:</strong> ${dateFormatted}</p>
                 <p><strong>🕐 Horário:</strong> ${data.startTime} - ${data.endTime}</p>
                 <p><strong>💼 Serviço:</strong> ${data.service}</p>
                 ${data.notes ? `<p><strong>📝 Observações:</strong> ${data.notes}</p>` : ''}
               </div>
               
-              <p>Para confirmar seu agendamento, clique no botão abaixo:</p>
-              <center>
-                <a href="${process.env.CLIENT_URL}/confirm/${data.confirmationToken}" class="button">
-                  Confirmar Agendamento
-                </a>
-              </center>
-              
-              <p><small>Se você não solicitou este agendamento, pode ignorar este email.</small></p>
+              <p><small>Se você não solicitou este agendamento, por favor, entre em contato.</small></p>
             </div>
             <div class="footer">
               <p>© 2024 Agenda Inteligente - Todos os direitos reservados</p>
@@ -78,12 +76,12 @@ const getEmailTemplate = (type, data) => {
               <h1>🔔 Lembrete de Agendamento</h1>
             </div>
             <div class="content">
-              <p>Olá <strong>${data.client.name}</strong>,</p>
+              <p>Olá <strong>${clientName}</strong>,</p>
               <p>Este é um lembrete do seu agendamento amanhã!</p>
               
               <div class="details">
                 <h3>Seu Agendamento:</h3>
-                <p><strong>📅 Data:</strong> ${new Date(data.date).toLocaleDateString('pt-BR')}</p>
+                <p><strong>📅 Data:</strong> ${dateFormatted}</p>
                 <p><strong>🕐 Horário:</strong> ${data.startTime} - ${data.endTime}</p>
                 <p><strong>💼 Serviço:</strong> ${data.service}</p>
               </div>
@@ -109,12 +107,12 @@ const getEmailTemplate = (type, data) => {
               <h1>❌ Agendamento Cancelado</h1>
             </div>
             <div class="content">
-              <p>Olá <strong>${data.client.name}</strong>,</p>
+              <p>Olá <strong>${clientName}</strong>,</p>
               <p>Seu agendamento foi cancelado conforme solicitado.</p>
               
               <div class="details">
                 <h3>Agendamento Cancelado:</h3>
-                <p><strong>📅 Data:</strong> ${new Date(data.date).toLocaleDateString('pt-BR')}</p>
+                <p><strong>📅 Data:</strong> ${dateFormatted}</p>
                 <p><strong>🕐 Horário:</strong> ${data.startTime} - ${data.endTime}</p>
                 <p><strong>💼 Serviço:</strong> ${data.service}</p>
               </div>
@@ -166,12 +164,16 @@ const sendReminderEmail = async (appointment) => {
     const info = await transporter.sendMail(mailOptions);
     console.log('Email de lembrete enviado:', info.messageId);
     
-    // Marca que o lembrete foi enviado
+    // NOTA: O model Appointment não possui o campo 'reminders'.
+    // Esta parte do código (original) causará um erro se não for tratada.
+    // Comentando para evitar falhas.
+    /*
     appointment.reminders.push({
       type: 'email',
       sentAt: new Date()
     });
     await appointment.save();
+    */
     
     return info;
   } catch (error) {
@@ -214,13 +216,13 @@ const sendDailyReminders = async () => {
   
   try {
     // Busca agendamentos de amanhã que ainda não receberam lembrete
+    // NOTA: O filtro 'reminders.type' foi removido pois o campo não existe no Model.
     const appointments = await Appointment.find({
       date: {
         $gte: tomorrow,
         $lt: dayAfter
       },
       status: { $in: ['scheduled', 'confirmed'] },
-      'reminders.type': { $ne: 'email' }
     });
     
     console.log(`Enviando ${appointments.length} lembretes para amanhã`);
