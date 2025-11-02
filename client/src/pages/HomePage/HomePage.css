@@ -1,7 +1,49 @@
 /* client/src/pages/HomePage/HomePage.css */
 
 .homepage-container {
-  background-color: #f4f4f9;
+  background: #5a67d8;
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Ondas fluidas no background - Estilo exato da imagem */
+.homepage-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(180deg, 
+      #7c8adb 0%,
+      #6b7bd8 20%,
+      #5a67d8 40%,
+      #5961c9 60%,
+      #4a4fb8 80%,
+      #3d3fa8 100%
+    );
+  z-index: 0;
+}
+
+.homepage-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 800' preserveAspectRatio='none'%3E%3Cpath fill='%234a4fb8' fill-opacity='0.4' d='M0,400 C240,450 480,350 720,400 C960,450 1200,350 1440,400 L1440,800 L0,800 Z'%3E%3C/path%3E%3Cpath fill='%233d3fa8' fill-opacity='0.4' d='M0,500 C240,450 480,550 720,500 C960,450 1200,550 1440,500 L1440,800 L0,800 Z'%3E%3C/path%3E%3Cpath fill='%232d2f88' fill-opacity='0.3' d='M0,600 C360,550 720,650 1080,600 C1200,580 1320,620 1440,600 L1440,800 L0,800 Z'%3E%3C/path%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  z-index: 0;
+  opacity: 0.6;
 }
 
 /* Seção Principal (Hero) */
@@ -10,131 +52,224 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex: 1;
   color: white;
   text-align: center;
-  padding: 20px;
+  padding: 60px 20px 40px 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .content {
   max-width: 800px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .content h1 {
   font-size: 3rem;
   margin-bottom: 20px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  font-weight: 700;
+  line-height: 1.2;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  letter-spacing: -0.5px;
 }
 
 .content p {
-  font-size: 1.2rem;
-  margin-bottom: 40px;
+  font-size: 1.15rem;
+  margin-bottom: 35px;
+  line-height: 1.6;
+  opacity: 0.95;
+  font-weight: 400;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.2);
 }
 
 .button-group {
   display: flex;
   gap: 20px;
   justify-content: center;
+  margin-bottom: 50px;
 }
 
 .btn {
-  padding: 12px 24px;
+  padding: 14px 32px;
   text-decoration: none;
-  border-radius: 5px;
-  font-weight: bold;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
   transition: all 0.3s ease;
   border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  white-space: nowrap;
 }
 
 .btn-primary {
-  background-color: white;
-  color: #667eea;
+  background: #48bb78;
+  color: white;
+  border: none;
 }
 
 .btn-primary:hover {
-  background-color: transparent;
-  color: white;
-  border-color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+  background: #38a169;
 }
 
 .btn-secondary {
-  background-color: transparent;
-  color: white;
-  border-color: white;
+  background: rgba(255, 255, 255, 0.95);
+  color: #5a67d8;
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-secondary:hover {
-  background-color: white;
-  color: #667eea;
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255,255,255,0.3);
 }
 
-/* Seção de Vantagens (Features) */
+/* Seção de Features */
 .features-section {
-  padding: 60px 20px;
-  background-color: #ffffff;
+  padding: 0 40px 40px 40px;
   text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
 .features-section h2 {
-  font-size: 2.2rem;
-  margin-bottom: 50px;
-  color: #333;
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+  color: white;
+  font-weight: 600;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
-  max-width: 1200px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  max-width: 1300px;
   margin: 0 auto;
 }
 
 .feature-card {
-  background: #fff;
-  padding: 30px;
-  border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  padding: 30px 25px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+  border: none;
+  position: relative;
+  overflow: hidden;
 }
 
 .feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+  background: white;
 }
 
 .feature-card h3 {
-  font-size: 1.25rem;
-  margin-bottom: 15px;
-  color: #333;
+  font-size: 1.15rem;
+  margin-bottom: 12px;
+  color: #2d3748;
+  font-weight: 700;
 }
 
 .feature-card p {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.6;
-  color: #666;
+  color: #4a5568;
+  margin: 0;
 }
 
 /* Rodapé */
 .footer {
   width: 100%;
-  padding: 30px 20px;
-  background-color: #2c3e50;
-  color: rgba(255, 255, 255, 0.8);
+  padding: 20px;
+  background: rgba(45, 47, 136, 0.4);
+  color: rgba(255, 255, 255, 0.9);
   text-align: center;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
 }
 
 .footer p {
   margin: 5px 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .footer a {
-  color: white;
+  color: rgba(255, 255, 255, 0.95);
   text-decoration: none;
   margin: 0 10px;
+  transition: color 0.3s ease;
 }
 
 .footer a:hover {
+  color: white;
   text-decoration: underline;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .homepage-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+  
+  .content h1 {
+    font-size: 2.2rem;
+  }
+  
+  .content p {
+    font-size: 1.05rem;
+  }
+  
+  .button-group {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .features-section {
+    padding: 20px;
+  }
+  
+  .features-section h2 {
+    font-size: 1.3rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .feature-card {
+    padding: 25px 20px;
+  }
 }

@@ -9,13 +9,12 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['admin', 'client'], default: 'client' }
 });
 
+// **** ESTA É A PARTE QUE FALTOU ****
 // Hook 'pre-save' para fazer o hash da senha antes de salvar
 userSchema.pre('save', async function(next) {
-  // Faz o hash da senha apenas se ela foi modificada (ou é nova)
   if (!this.isModified('password')) {
     return next();
   }
-  
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -25,6 +24,7 @@ userSchema.pre('save', async function(next) {
   }
 });
 
+// **** E ESTA É A FUNÇÃO QUE ESTÁ CAUSANDO O CRASH (500) ****
 // Método para comparar a senha fornecida com o hash no banco de dados
 userSchema.methods.comparePassword = async function(candidatePassword) {
   try {
@@ -33,5 +33,6 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
     throw error;
   }
 };
+// ******************************************************
 
 module.exports = mongoose.model('User', userSchema);

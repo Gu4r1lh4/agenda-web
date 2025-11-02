@@ -1,14 +1,13 @@
-// routes/settings.js
+// server/src/routes/settings.js
 const express = require('express');
 const router = express.Router();
+const settingsController = require('../controllers/settingsController');
+const { protect } = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
-  // Retorna configurações
-  res.json({
-    companyName: 'Agenda Inteligente',
-    primaryColor: '#4CAF50',
-    services: ['Consulta', 'Retorno']
-  });
-});
+// GET - Buscar configurações (pública)
+router.get('/', settingsController.getSettings);
+
+// PUT - Atualizar configurações (protegida - apenas admin)
+router.put('/', protect, settingsController.updateSettings);
 
 module.exports = router;

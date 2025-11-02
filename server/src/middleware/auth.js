@@ -11,26 +11,42 @@ exports.protect = async (req, res, next) => {
     try {
       // Obter token (Bearer <token>)
       token = req.headers.authorization.split(' ')[1];
+      
+      console.log('🔑 Token recebido:', token.substring(0, 20) + '...');
 
       // Verificar token
-      const secret = process.env.JWT_SECRET || 'seu-segredo-jwt-temporario';
+      const secret = process.env.JWT_SECRET || 'secret';
       const decoded = jwt.verify(token, secret);
+      
+      console.log('✅ Token válido. User ID:', decoded.userId || decoded.id);
 
       // Anexar o usuário à requisição (sem a senha)
-      req.user = await User.findById(decoded.id).select('-password');
+      req.user = await User.findById(decoded.userId || decoded.id).select('-password');
+      
+      // Se for o admin hardcoded, cria um objeto de usuário fictício
+      if (!req.user && (decoded.userId === 'admin' || decoded.id === 'admin')) {
+        req.user = {
+          _id: 'admin',
+          role: 'admin',
+          name: 'Administrador'
+        };
+        console.log('✅ Admin hardcoded autenticado');
+      }
       
       if (!req.user) {
+         console.log('❌ Usuário não encontrado no banco');
          return res.status(401).json({ success: false, message: 'Usuário não encontrado.' });
       }
 
       next();
     } catch (error) {
-      console.error('Erro de autenticação:', error.message);
+      console.error('❌ Erro de autenticação:', error.message);
       return res.status(401).json({ success: false, message: 'Não autorizado, token inválido.' });
     }
   }
 
   if (!token) {
+    console.log('❌ Nenhum token fornecido');
     return res.status(401).json({ success: false, message: 'Não autorizado, sem token.' });
   }
 };
@@ -43,9 +59,18 @@ exports.attachUser = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
-      const secret = process.env.JWT_SECRET || 'seu-segredo-jwt-temporario';
+      const secret = process.env.JWT_SECRET || 'secret';
       const decoded = jwt.verify(token, secret);
-      req.user = await User.findById(decoded.id).select('-password');
+      req.user = await User.findById(decoded.userId || decoded.id).select('-password');
+      
+      // Admin hardcoded
+      if (!req.user && (decoded.userId === 'admin' || decoded.id === 'admin')) {
+        req.user = {
+          _id: 'admin',
+          role: 'admin',
+          name: 'Administrador'
+        };
+      }
     } catch (error) {
       // Se o token for inválido ou expirado, apenas não anexa o usuário
       req.user = null;

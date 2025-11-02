@@ -1,181 +1,236 @@
 /* client/src/pages/ClientView/ClientView.css */
 
 .client-view {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
-  background-color: #f9f9f9;
+  background: linear-gradient(180deg, #f8f9fc 0%, #e9ecf5 100%);
   min-height: 100vh;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 1rem;
-  position: relative; /* Para o botão de logout */
+  margin-bottom: 3rem;
+  padding-bottom: 2rem;
+  position: relative;
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 }
 
 .header h1 {
-  color: #333;
+  color: #2d3748;
   margin: 0;
-  font-size: 2.2rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .btn-logout {
   position: absolute;
-  top: 0;
-  right: 0;
-  padding: 0.5rem 1rem;
-  background-color: #f44336;
+  top: 1.5rem;
+  right: 1.5rem;
+  padding: 0.7rem 1.5rem;
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background-color 0.2s;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(245, 101, 101, 0.3);
 }
+
 .btn-logout:hover {
-  background-color: #d32f2f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
 }
 
 .booking-container {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: white;
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .booking-container h2 {
   text-align: center;
   margin-top: 0;
-  margin-bottom: 2rem;
-  color: #444;
+  margin-bottom: 2.5rem;
+  color: #2d3748;
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .setup-section-simple {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  border-radius: 16px;
 }
 
 .setup-section-simple label {
   font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: #555;
+  margin-bottom: 1rem;
+  color: #2d3748;
 }
 
 .setup-section-simple input[type="date"] {
-  padding: 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 1rem 1.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
   font-size: 1.1rem;
-  min-width: 250px;
+  min-width: 280px;
   text-align: center;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.setup-section-simple input[type="date"]:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* Slots */
 .slots-container h3 {
   margin-top: 0;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
-  color: #333;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+  color: #2d3748;
+  font-size: 1.3rem;
+  font-weight: 600;
 }
+
 .slots-container h3 small {
   display: block;
-  font-size: 0.85rem;
-  color: #777;
+  font-size: 0.9rem;
+  color: #718096;
   font-weight: 400;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .loading {
   text-align: center;
-  padding: 2rem;
-  color: #777;
+  padding: 3rem;
+  color: #667eea;
   font-style: italic;
+  font-size: 1.1rem;
 }
+
 .no-slots {
   text-align: center;
-  padding: 2rem;
-  color: #888;
-  background-color: #f9f9f9;
-  border-radius: 6px;
+  padding: 3rem;
+  color: #718096;
+  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  border-radius: 16px;
+  font-size: 1.05rem;
 }
 
 .slots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
-  margin-top: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+  margin-top: 1.5rem;
   margin-bottom: 2rem;
 }
 
 .slot-button {
-  padding: 0.8rem;
-  font-size: 1rem;
+  padding: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  border: 1px solid var(--primary-color, #4CAF50);
-  background-color: #f0fff0;
-  color: var(--primary-color-dark, #388E3C);
-  border-radius: 6px;
+  border: 2px solid #667eea;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e9ecf5 100%);
+  color: #667eea;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .slot-button:hover {
-  background-color: var(--primary-color, #4CAF50);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .slot-button.occupied {
-  background-color: #f1f1f1;
-  border-color: #ccc;
-  color: #888;
-  cursor: pointer; /* Mantém o cursor para clique de cancelamento */
+  background: #f8f9fc;
+  border-color: #cbd5e0;
+  color: #a0aec0;
+  cursor: pointer;
 }
+
 .slot-button.occupied:hover {
-  background-color: #e0e0e0;
-  color: #555;
+  background: #e2e8f0;
+  color: #718096;
+  border-color: #a0aec0;
 }
 
 /* Booking Form */
 .booking-form {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 2px dashed #eee;
+  margin-top: 3rem;
+  padding-top: 3rem;
+  border-top: 2px dashed #e2e8f0;
 }
+
 .booking-form h3 {
   text-align: center;
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  color: #2d3748;
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: 1.5rem;
 }
+
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.7rem;
   font-weight: 600;
-  color: #555;
+  color: #2d3748;
+  font-size: 1rem;
 }
+
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  box-sizing: border-box; 
+  padding: 1rem 1.2rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  box-sizing: border-box;
   font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f8f9fc;
 }
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .form-group input:disabled,
 .form-group select:disabled {
-  background-color: #f8f8f8;
-  color: #777;
+  background-color: #f8f9fc;
+  color: #a0aec0;
+  cursor: not-allowed;
 }
 
 /* Modal Genérico */
@@ -185,134 +240,224 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal-content {
   background: white;
-  padding: 2rem 2.5rem;
-  border-radius: 10px;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  padding: 2.5rem 3rem;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   width: 90%;
-  max-width: 500px;
+  max-width: 550px;
+  animation: slideUp 0.4s ease;
 }
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .modal-content h2 {
   margin-top: 0;
   text-align: center;
-  color: #333;
+  color: #2d3748;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
 }
+
 .modal-content p {
-  color: #555;
-  line-height: 1.6;
+  color: #718096;
+  line-height: 1.7;
+  font-size: 1.05rem;
 }
 
 .modal-actions {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: flex-end;
 }
+
 .modal-actions .btn-back,
 .modal-actions .btn-confirm-cancel,
 .modal-actions .submit-button {
-  padding: 0.7rem 1.2rem;
+  padding: 0.9rem 1.5rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
 }
+
 .modal-actions .btn-back {
-  background-color: #f1f1f1;
-  color: #555;
+  background: #f8f9fc;
+  color: #718096;
+  border: 2px solid #e2e8f0;
 }
+
 .modal-actions .btn-back:hover {
-  background-color: #e0e0e0;
+  background: #e2e8f0;
+  color: #2d3748;
 }
 
 .submit-button {
-  background-color: var(--primary-color, #4CAF50);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
+
 .submit-button:hover {
-  background-color: var(--primary-color-dark, #45a049);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
+
 .submit-button:disabled {
-  background-color: #ccc;
+  background: #cbd5e0;
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
 }
 
 .btn-confirm-cancel {
-  background-color: #d9534f;
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(245, 101, 101, 0.3);
 }
+
 .btn-confirm-cancel:hover {
-  background-color: #c9302c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
 }
 
 /* Alertas */
 .alert-error {
-  color: #d8000c;
-  background-color: #ffbaba;
-  border: 1px solid #d8000c;
-  padding: 0.8rem 1rem;
-  border-radius: 6px;
+  color: #c53030;
+  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  border: 2px solid #fc8181;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
   margin-bottom: 1.5rem;
+  font-weight: 500;
 }
+
 .alert-success {
-  color: #4f8a10;
-  background-color: #dff2bf;
-  border: 1px solid #4f8a10;
-  padding: 0.8rem 1rem;
-  border-radius: 6px;
+  color: #2f855a;
+  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  border: 2px solid #68d391;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
   margin-bottom: 1.5rem;
+  font-weight: 500;
 }
 
 /* Modal de Confirmação */
 .booking-details {
-  background: #f9f9f9;
-  border: 1px solid #eee;
-  padding: 1rem;
-  border-radius: 6px;
+  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  border: 2px solid #e2e8f0;
+  padding: 1.5rem;
+  border-radius: 12px;
   margin: 1.5rem 0;
 }
-.booking-details p { margin: 0.5rem 0; }
-.close-button {
-  width: 100%;
-  padding: 0.8rem;
-  font-size: 1rem;
-  background-color: var(--primary-color, #4CAF50);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+
+.booking-details p {
+  margin: 0.7rem 0;
+  color: #2d3748;
+  font-size: 1.05rem;
 }
 
-/* REQ 3.0: Estilos para o Modal de Login */
+.close-button {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.05rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.close-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Modal de Login */
 .login-modal-content {
-  max-width: 420px;
+  max-width: 460px;
 }
+
 .login-modal-content h2 {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.7rem;
 }
+
 .login-modal-content p {
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #666;
+  margin-bottom: 2rem;
+  color: #718096;
 }
+
 .login-modal-content .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.2rem;
 }
+
 .login-modal-content .modal-actions {
-  /* Alinha os dois botões */
-  flex-direction: column-reverse; /* Botão principal em cima */
+  flex-direction: column-reverse;
 }
+
 .login-modal-content .modal-actions button {
   width: 100%;
-  font-size: 1rem;
-  padding: 0.8rem;
+  font-size: 1.05rem;
+  padding: 1rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .client-view {
+    padding: 1rem;
+  }
+  
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .btn-logout {
+    position: static;
+    margin-top: 1rem;
+    width: 100%;
+  }
+  
+  .booking-container {
+    padding: 1.5rem;
+  }
+  
+  .slots-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+  
+  .modal-content {
+    padding: 2rem 1.5rem;
+  }
 }
