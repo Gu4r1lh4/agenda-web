@@ -1,5 +1,5 @@
-// src/pages/AdminPanel/AdminPanel.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+// src/pages/AdminPanel/AdminPanel.jsx - VERSÃO CORRIGIDA
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 import './AdminPanel.css';
@@ -7,7 +7,6 @@ import './AdminPanel.css';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
-// Paletas de cores predefinidas
 const COLOR_PALETTES = {
   purple: {
     name: 'Roxo Profissional',
@@ -98,7 +97,7 @@ const AdminPanel = () => {
     setSocket(newSocket);
     
     newSocket.on('appointment-update', (update) => {
-      console.log('Atualização em tempo real:', update);
+      console.log('🔄 Atualização em tempo real:', update);
       if (activeTab === 'appointments') fetchAppointments();
       if (activeTab === 'dashboard') fetchDashboardAppointments(dashboardDate);
       fetchStats();
@@ -112,14 +111,22 @@ const AdminPanel = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'dashboard' && dashboardDate) {
+    if (activeTab === 'dashboard') {
+      console.log('📊 Dashboard ativo, buscando agendamentos para:', dashboardDate);
       fetchDashboardAppointments(dashboardDate);
     }
   }, [dashboardDate, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'appointments') {
+      console.log('📅 Aba de agendamentos ativa, buscando para:', selectedDate);
+      fetchAppointments();
+    }
+  }, [selectedDate, statusFilter, activeTab]);
   
   const loadInitialData = async () => {
+    console.log('🚀 Carregando dados iniciais...');
     await Promise.all([
-      fetchAppointments(),
       fetchSettings(),
       fetchStats(),
       fetchDashboardAppointments(dashboardDate)
@@ -133,27 +140,38 @@ const AdminPanel = () => {
   
   const fetchStats = async () => {
     try {
+      console.log('📈 Buscando estatísticas...');
       const response = await axios.get(`${API_URL}/stats`);
+      console.log('✅ Estatísticas recebidas:', response.data);
       setStats(response.data);
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
+      console.error('❌ Erro ao buscar estatísticas:', error);
     }
   };
   
   const fetchAppointments = async () => {
     setLoading(true);
     try {
+      console.log('📅 Buscando agendamentos para:', selectedDate, 'Status:', statusFilter);
+      
       const params = { date: selectedDate };
       if (statusFilter !== 'all') {
         params.status = statusFilter;
       }
       
       const response = await axios.get(`${API_URL}/appointments`, { params });
-      const appointmentsList = response.data.appointments || response.data;
+      console.log('✅ Resposta completa:', response.data);
+      
+      const appointmentsList = response.data.appointments || response.data || [];
+      console.log('📋 Lista de agendamentos:', appointmentsList);
+      console.log('🔢 Total de agendamentos:', appointmentsList.length);
+      
       setAppointments(appointmentsList);
     } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
+      console.error('❌ Erro ao buscar agendamentos:', error);
+      console.error('Detalhes do erro:', error.response?.data);
       setAppointments([]);
+      showMessage('Erro ao buscar agendamentos', 'error');
     } finally {
       setLoading(false);
     }
@@ -161,20 +179,32 @@ const AdminPanel = () => {
   
   const fetchDashboardAppointments = async (date) => {
     try {
+      console.log('📊 Buscando agendamentos do dashboard para:', date);
+      
       const response = await axios.get(`${API_URL}/appointments`, {
         params: { date: date }
       });
-      const appointmentsList = response.data.appointments || response.data;
+      
+      console.log('✅ Resposta do dashboard:', response.data);
+      
+      const appointmentsList = response.data.appointments || response.data || [];
+      console.log('📋 Dashboard - Total de agendamentos:', appointmentsList.length);
+      console.log('📋 Dashboard - Agendamentos:', appointmentsList);
+      
       setDashboardAppointments(appointmentsList);
     } catch (error) {
-      console.error('Erro ao buscar agendamentos do dashboard:', error);
+      console.error('❌ Erro ao buscar agendamentos do dashboard:', error);
+      console.error('Detalhes do erro:', error.response?.data);
       setDashboardAppointments([]);
     }
   };
   
   const fetchSettings = async () => {
     try {
+      console.log('⚙️ Buscando configurações...');
       const response = await axios.get(`${API_URL}/settings`);
+      console.log('✅ Configurações recebidas:', response.data);
+      
       setSettings(prev => ({
         ...prev,
         ...response.data,
@@ -183,21 +213,30 @@ const AdminPanel = () => {
         services: response.data.services || []
       }));
       
-      // Aplicar cor da paleta
       const palette = COLOR_PALETTES[response.data.colorPalette || 'purple'];
       document.documentElement.style.setProperty('--primary-color', palette.primary);
       document.documentElement.style.setProperty('--secondary-color', palette.secondary);
     } catch (error) {
-      console.error('Erro ao buscar configurações:', error);
+      console.error('❌ Erro ao buscar configurações:', error);
     }
   };
   
   const updateAppointmentStatus = async (appointmentId, newStatus) => {
     try {
+      console.log(`🔄 Atualizando status do agendamento ${appointmentId} para ${newStatus}`);
+      
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
       const response = await axios.patch(
         `${API_URL}/appointments/${appointmentId}/status`,
-        { status: newStatus }
+        { status: newStatus },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
       );
+      
+      console.log('✅ Status atualizado:', response.data);
       
       if (response.data.success || response.data.appointment) {
         const updatedAppointment = response.data.appointment;
@@ -212,10 +251,14 @@ const AdminPanel = () => {
         setDashboardAppointments(prev => updateList(prev));
         
         showMessage(`Status atualizado para ${newStatus} com sucesso!`, 'success');
-        setTimeout(fetchStats, 500);
+        setTimeout(() => {
+          fetchStats();
+          if (activeTab === 'dashboard') fetchDashboardAppointments(dashboardDate);
+          if (activeTab === 'appointments') fetchAppointments();
+        }, 500);
       }
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      console.error('❌ Erro ao atualizar status:', error);
       showMessage('Erro ao atualizar status', 'error');
     }
   };
@@ -226,7 +269,16 @@ const AdminPanel = () => {
     }
     
     try {
-      const response = await axios.delete(`${API_URL}/appointments/${appointmentId}`);
+      console.log(`❌ Cancelando agendamento ${appointmentId}`);
+      
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+      const response = await axios.delete(`${API_URL}/appointments/${appointmentId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('✅ Agendamento cancelado:', response.data);
       
       if (response.data.success) {
         const removeFromList = (list) => list.filter(apt => apt._id !== appointmentId);
@@ -234,10 +286,14 @@ const AdminPanel = () => {
         setDashboardAppointments(prev => removeFromList(prev));
         
         showMessage('Agendamento cancelado com sucesso', 'success');
-        setTimeout(fetchStats, 500);
+        setTimeout(() => {
+          fetchStats();
+          if (activeTab === 'dashboard') fetchDashboardAppointments(dashboardDate);
+          if (activeTab === 'appointments') fetchAppointments();
+        }, 500);
       }
     } catch (error) {
-      console.error('Erro ao cancelar:', error);
+      console.error('❌ Erro ao cancelar:', error);
       showMessage(error.response?.data?.error || 'Erro ao cancelar agendamento', 'error');
     }
   };
@@ -264,7 +320,6 @@ const AdminPanel = () => {
 
   const handleSaveSettings = async () => {
     try {
-      // Busca o token do localStorage
       const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
       
       if (!token) {
@@ -278,14 +333,13 @@ const AdminPanel = () => {
         }
       });
       
-      // Aplicar nova paleta de cores
       const palette = COLOR_PALETTES[settings.colorPalette];
       document.documentElement.style.setProperty('--primary-color', palette.primary);
       document.documentElement.style.setProperty('--secondary-color', palette.secondary);
       
       showMessage('Configurações salvas com sucesso!', 'success');
     } catch (error) {
-      console.error('Erro ao salvar configurações:', error);
+      console.error('❌ Erro ao salvar configurações:', error);
       if (error.response?.status === 401) {
         showMessage('Erro: Não autorizado. Faça login novamente.', 'error');
       } else {
@@ -296,87 +350,112 @@ const AdminPanel = () => {
   
   const handleLogout = () => {
     localStorage.removeItem('isAdmin');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('token');
     window.location.href = '/';
   };
   
-  const renderAppointmentCard = (appointment) => (
-    <div key={appointment._id} style={{ 
-      border: '1px solid #e2e8f0', 
-      borderRadius: '12px', 
-      padding: '20px', 
-      marginBottom: '15px',
-      background: 'white',
-      transition: 'all 0.3s ease',
-      opacity: appointment.status === 'cancelled' ? 0.6 : 1
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-        <h3 style={{ margin: 0, color: '#2d3748' }}>{appointment.client?.name}</h3>
-        <span style={{
-          padding: '6px 14px',
-          borderRadius: '20px',
-          fontSize: '0.8rem',
-          fontWeight: '700',
-          background: appointment.status === 'confirmed' ? '#d4edda' : 
-                     appointment.status === 'scheduled' ? '#fff3cd' :
-                     appointment.status === 'completed' ? '#d1ecf1' :
-                     appointment.status === 'cancelled' ? '#f8d7da' : '#f5f5f5',
-          color: appointment.status === 'confirmed' ? '#155724' :
-                 appointment.status === 'scheduled' ? '#856404' :
-                 appointment.status === 'completed' ? '#0c5460' :
-                 appointment.status === 'cancelled' ? '#721c24' : '#666'
-        }}>
-          {appointment.status?.toUpperCase()}
-        </span>
+  const renderAppointmentCard = (appointment) => {
+    console.log('🎴 Renderizando card do agendamento:', appointment);
+    
+    return (
+      <div key={appointment._id} style={{ 
+        border: '2px solid #e2e8f0', 
+        borderRadius: '12px', 
+        padding: '20px', 
+        marginBottom: '15px',
+        background: 'white',
+        transition: 'all 0.3s ease',
+        opacity: appointment.status === 'cancelled' ? 0.6 : 1,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0, color: '#2d3748', fontSize: '1.2rem' }}>
+            {appointment.client?.name || 'Cliente sem nome'}
+          </h3>
+          <span style={{
+            padding: '6px 14px',
+            borderRadius: '20px',
+            fontSize: '0.8rem',
+            fontWeight: '700',
+            background: appointment.status === 'confirmed' ? '#d4edda' : 
+                       appointment.status === 'scheduled' ? '#fff3cd' :
+                       appointment.status === 'completed' ? '#d1ecf1' :
+                       appointment.status === 'cancelled' ? '#f8d7da' : '#f5f5f5',
+            color: appointment.status === 'confirmed' ? '#155724' :
+                   appointment.status === 'scheduled' ? '#856404' :
+                   appointment.status === 'completed' ? '#0c5460' :
+                   appointment.status === 'cancelled' ? '#721c24' : '#666'
+          }}>
+            {appointment.status === 'scheduled' ? '⏳ AGENDADO' :
+             appointment.status === 'confirmed' ? '✅ CONFIRMADO' :
+             appointment.status === 'completed' ? '✔️ CONCLUÍDO' :
+             appointment.status === 'cancelled' ? '❌ CANCELADO' :
+             appointment.status?.toUpperCase()}
+          </span>
+        </div>
+        
+        <div style={{ color: '#718096', fontSize: '0.95rem', marginBottom: '15px', lineHeight: '1.6' }}>
+          <p style={{ margin: '8px 0' }}><strong>📧 Email:</strong> {appointment.client?.email || 'N/A'}</p>
+          <p style={{ margin: '8px 0' }}><strong>📱 Telefone:</strong> {appointment.client?.phone || 'N/A'}</p>
+          <p style={{ margin: '8px 0' }}><strong>🕐 Horário:</strong> {appointment.startTime} - {appointment.endTime}</p>
+          <p style={{ margin: '8px 0' }}><strong>💼 Serviço:</strong> {appointment.service}</p>
+          <p style={{ margin: '8px 0' }}>
+            <strong>📅 Data:</strong> {new Date(appointment.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+          </p>
+          {appointment.notes && <p style={{ margin: '8px 0' }}><strong>📝 Obs:</strong> {appointment.notes}</p>}
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          {appointment.status === 'scheduled' && (
+            <button
+              onClick={() => updateAppointmentStatus(appointment._id, 'confirmed')}
+              className="btn-small" 
+              style={{ background: '#48bb78', color: 'white' }}
+            >
+              ✓ Confirmar
+            </button>
+          )}
+          {appointment.status === 'confirmed' && (
+            <button
+              onClick={() => updateAppointmentStatus(appointment._id, 'completed')}
+              className="btn-small" 
+              style={{ background: '#4299e1', color: 'white' }}
+            >
+              ✓ Concluir
+            </button>
+          )}
+          {appointment.status !== 'cancelled' && appointment.status !== 'completed' && (
+            <button
+              onClick={() => cancelAppointment(appointment._id)}
+              className="btn-small" 
+              style={{ 
+                background: '#f56565', 
+                color: 'white'
+              }}
+            >
+              ✕ Cancelar
+            </button>
+          )}
+        </div>
       </div>
-      
-      <div style={{ color: '#718096', fontSize: '0.95rem', marginBottom: '15px' }}>
-        <p style={{ margin: '5px 0' }}>📧 {appointment.client?.email}</p>
-        <p style={{ margin: '5px 0' }}>📱 {appointment.client?.phone}</p>
-        <p style={{ margin: '5px 0' }}>🕐 {appointment.startTime} - {appointment.endTime}</p>
-        <p style={{ margin: '5px 0' }}>💼 {appointment.service}</p>
-        <p style={{ margin: '5px 0' }}>📅 {new Date(appointment.date).toLocaleDateString('pt-BR')}</p>
-        {appointment.notes && <p style={{ margin: '5px 0' }}>📝 {appointment.notes}</p>}
-      </div>
-      
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        {appointment.status === 'scheduled' && (
-          <button
-            onClick={() => updateAppointmentStatus(appointment._id, 'confirmed')}
-            className="btn-small" 
-            style={{ background: '#48bb78', color: 'white' }}
-          >
-            ✓ Confirmar
-          </button>
-        )}
-        {appointment.status === 'confirmed' && (
-          <button
-            onClick={() => updateAppointmentStatus(appointment._id, 'completed')}
-            className="btn-small" 
-            style={{ background: '#4299e1', color: 'white' }}
-          >
-            ✓ Concluir
-          </button>
-        )}
-        {appointment.status !== 'cancelled' && (
-          <button
-            onClick={() => cancelAppointment(appointment._id)}
-            disabled={appointment.status === 'completed'}
-            className="btn-small" 
-            style={{ 
-              background: appointment.status === 'completed' ? '#cbd5e0' : '#f56565', 
-              color: 'white',
-              cursor: appointment.status === 'completed' ? 'not-allowed' : 'pointer'
-            }}
-          >
-            ✕ Cancelar
-          </button>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   const dashboardTotal = dashboardAppointments.length;
   const dashboardConfirmed = dashboardAppointments.filter(apt => apt.status === 'confirmed').length;
+  const dashboardScheduled = dashboardAppointments.filter(apt => apt.status === 'scheduled').length;
+  const dashboardCompleted = dashboardAppointments.filter(apt => apt.status === 'completed').length;
+
+  console.log('🎯 Estado atual do componente:', {
+    activeTab,
+    dashboardDate,
+    selectedDate,
+    dashboardAppointmentsCount: dashboardAppointments.length,
+    appointmentsCount: appointments.length,
+    dashboardTotal,
+    dashboardConfirmed
+  });
 
   return (
     <div className="admin-panel">
@@ -399,7 +478,7 @@ const AdminPanel = () => {
                 </>
               )}
               <button onClick={handleLogout} className="btn btn-secondary">
-                Sair
+                🚪 Sair
               </button>
             </div>
           </div>
@@ -441,7 +520,10 @@ const AdminPanel = () => {
                   <input
                     type="date"
                     value={dashboardDate}
-                    onChange={(e) => setDashboardDate(e.target.value)}
+                    onChange={(e) => {
+                      console.log('📅 Nova data selecionada:', e.target.value);
+                      setDashboardDate(e.target.value);
+                    }}
                     className="form-input" 
                     style={{ maxWidth: '220px' }}
                   />
@@ -457,25 +539,34 @@ const AdminPanel = () => {
                     <p style={{ color: '#2f855a', marginTop: '8px', fontSize: '0.9rem' }}>Confirmados na Data</p>
                   </div>
                   <div style={{ background: '#fff3e0', padding: '25px', borderRadius: '12px', textAlign: 'center', border: '2px solid #fbbf24' }}>
-                    <h3 style={{ color: '#dd6b20', fontSize: '2.5rem', margin: '0' }}>{stats?.summary?.pendingConfirmation || 0}</h3>
+                    <h3 style={{ color: '#dd6b20', fontSize: '2.5rem', margin: '0' }}>{dashboardScheduled}</h3>
                     <p style={{ color: '#c05621', marginTop: '8px', fontSize: '0.9rem' }}>Aguardando Confirmação</p>
                   </div>
                   <div style={{ background: '#e3f2fd', padding: '25px', borderRadius: '12px', textAlign: 'center', border: '2px solid #93c5fd' }}>
-                    <h3 style={{ color: '#3182ce', fontSize: '2.5rem', margin: '0' }}>{stats?.month?.total || 0}</h3>
-                    <p style={{ color: '#2c5282', marginTop: '8px', fontSize: '0.9rem' }}>Total Este Mês</p>
+                    <h3 style={{ color: '#3182ce', fontSize: '2.5rem', margin: '0' }}>{dashboardCompleted}</h3>
+                    <p style={{ color: '#2c5282', marginTop: '8px', fontSize: '0.9rem' }}>Concluídos na Data</p>
                   </div>
                 </div>
                 
                 <div>
-                  <h3 style={{ color: '#2d3748' }}>
+                  <h3 style={{ color: '#2d3748', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>
                     Agendamentos do dia {new Date(dashboardDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                   </h3>
+                  
+                  <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '20px' }}>
+                    Total de {dashboardTotal} agendamento{dashboardTotal !== 1 ? 's' : ''} encontrado{dashboardTotal !== 1 ? 's' : ''}
+                  </p>
+                  
                   {dashboardAppointments.length === 0 ? (
-                    <p style={{ padding: '30px', textAlign: 'center', background: '#f8f9fc', borderRadius: '12px', color: '#718096' }}>
-                      Nenhum agendamento encontrado para esta data.
-                    </p>
+                    <div style={{ padding: '50px', textAlign: 'center', background: '#f8f9fc', borderRadius: '12px', border: '2px dashed #cbd5e0' }}>
+                      <p style={{ color: '#718096', fontSize: '1.1rem', margin: 0 }}>
+                        📭 Nenhum agendamento encontrado para esta data
+                      </p>
+                    </div>
                   ) : (
-                    <div>{dashboardAppointments.map(renderAppointmentCard)}</div>
+                    <div>
+                      {dashboardAppointments.map(apt => renderAppointmentCard(apt))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -491,7 +582,10 @@ const AdminPanel = () => {
                     <input
                       type="date"
                       value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
+                      onChange={(e) => {
+                        console.log('📅 Nova data (appointments):', e.target.value);
+                        setSelectedDate(e.target.value);
+                      }}
                       className="form-input"
                     />
                   </div>
@@ -500,7 +594,10 @@ const AdminPanel = () => {
                     <label className="form-label">Status:</label>
                     <select
                       value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
+                      onChange={(e) => {
+                        console.log('🔍 Novo filtro de status:', e.target.value);
+                        setStatusFilter(e.target.value);
+                      }}
                       className="form-select"
                     >
                       <option value="all">Todos</option>
@@ -513,7 +610,10 @@ const AdminPanel = () => {
                   
                   <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                     <button 
-                      onClick={fetchAppointments}
+                      onClick={() => {
+                        console.log('🔄 Botão buscar clicado');
+                        fetchAppointments();
+                      }}
                       className="btn btn-primary"
                     >
                       🔄 Buscar
@@ -522,13 +622,20 @@ const AdminPanel = () => {
                 </div>
                 
                 {loading ? (
-                  <div className="loading">Carregando agendamentos...</div>
+                  <div className="loading">⏳ Carregando agendamentos...</div>
                 ) : appointments.length === 0 ? (
-                  <div style={{ padding: '50px', textAlign: 'center', background: '#f8f9fc', borderRadius: '12px' }}>
-                    <p style={{ color: '#718096', fontSize: '1.1rem' }}>Nenhum agendamento encontrado.</p>
+                  <div style={{ padding: '50px', textAlign: 'center', background: '#f8f9fc', borderRadius: '12px', border: '2px dashed #cbd5e0' }}>
+                    <p style={{ color: '#718096', fontSize: '1.1rem', margin: 0 }}>
+                      📭 Nenhum agendamento encontrado para os filtros selecionados
+                    </p>
                   </div>
                 ) : (
-                  <div>{appointments.map(renderAppointmentCard)}</div>
+                  <div>
+                    <p style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '20px' }}>
+                      Total de {appointments.length} agendamento{appointments.length !== 1 ? 's' : ''} encontrado{appointments.length !== 1 ? 's' : ''}
+                    </p>
+                    {appointments.map(apt => renderAppointmentCard(apt))}
+                  </div>
                 )}
               </div>
             )}
@@ -537,7 +644,6 @@ const AdminPanel = () => {
               <div className="settings-section">
                 <h2 style={{ marginTop: 0, color: '#2d3748' }}>Configurações do Sistema</h2>
                 
-                {/* Nome da Empresa */}
                 <div className="settings-group">
                   <h3>🏢 Informações da Empresa</h3>
                   <div className="form-group">
@@ -552,7 +658,6 @@ const AdminPanel = () => {
                   </div>
                 </div>
 
-                {/* Logo */}
                 <div className="settings-group">
                   <h3>🖼️ Logo da Empresa</h3>
                   <div className="form-group">
@@ -569,7 +674,6 @@ const AdminPanel = () => {
                   </div>
                 </div>
 
-                {/* Paleta de Cores */}
                 <div className="settings-group">
                   <h3>🎨 Paleta de Cores</h3>
                   <p style={{ color: '#718096', marginBottom: '15px' }}>
@@ -591,7 +695,6 @@ const AdminPanel = () => {
                   </div>
                 </div>
 
-                {/* Cards da HomePage */}
                 <div className="settings-group">
                   <h3>📝 Conteúdo dos Cards da Página Inicial</h3>
                   <p style={{ color: '#718096', marginBottom: '20px' }}>
@@ -626,7 +729,6 @@ const AdminPanel = () => {
                   </div>
                 </div>
 
-                {/* Botão Salvar */}
                 <div style={{ marginTop: '30px', textAlign: 'right' }}>
                   <button 
                     onClick={handleSaveSettings}

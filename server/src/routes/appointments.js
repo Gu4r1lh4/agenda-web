@@ -1,13 +1,56 @@
-// server/src/routes/appointments.js
+// server/src/routes/appointments.js - VERSÃO CORRIGIDA
 const express = require('express');
 const router = express.Router();
 const Appointment = require('../models/Appointment');
-const { protect, attachUser } = require('../middleware/auth'); // Importa o middleware
+const { protect, attachUser } = require('../middleware/auth');
 const emailService = require('../services/emailService');
 
 console.log('✅ Arquivo de rotas de agendamento (appointments.js) foi carregado!'); 
 
+// ============================================
+// GET - Listar agendamentos com filtros (SEM AUTENTICAÇÃO)
+// ============================================
+router.get('/', async (req, res) => {
+  try {
+    const { date, status } = req.query;
+    const filter = {};
+
+    if (date) {
+      // Correção para buscar pela data independente do timezone
+      const [year, month, day] = date.split('-').map(Number);
+      const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+      filter.date = { $gte: startOfDay, $lte: endOfDay };
+    }
+
+    if (status && status !== 'Todos') {
+      filter.status = status;
+    } else {
+      // Não mostrar cancelados por padrão
+      filter.status = { $ne: 'cancelled' };
+    }
+
+    const appointments = await Appointment.find(filter).sort({ date: 1, startTime: 1 });
+
+    console.log(`✅ Retornando ${appointments.length} agendamentos para data: ${date || 'todas'}`);
+
+    res.status(200).json({ 
+      success: true, 
+      appointments 
+    });
+  } catch (error) {
+    console.error('❌ Erro ao buscar agendamentos:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao buscar agendamentos',
+      error: error.message 
+    });
+  }
+});
+
+// ============================================
 // GET - Buscar horários disponíveis
+// ============================================
 router.get('/available-slots', async (req, res) => {
   try {
     const { date } = req.query;
@@ -19,7 +62,9 @@ router.get('/available-slots', async (req, res) => {
   }
 });
 
-// POST - Criar novo agendamento (Anexa o usuário se logado)
+// ============================================
+// POST - Criar novo agendamento (Anexa usuário se logado)
+// ============================================
 router.post('/', attachUser, async (req, res) => {
   try {
     const { client, date, startTime, endTime, service } = req.body;
@@ -53,7 +98,9 @@ router.post('/', attachUser, async (req, res) => {
   }
 });
 
-// ROTA para cancelamento pelo cliente (Protegida)
+// ============================================
+// POST - Cancelamento pelo cliente (PROTEGIDA)
+// ============================================
 router.post('/cancel-by-client', protect, async (req, res) => {
     try {
         const { appointmentId } = req.body;
@@ -97,19 +144,88 @@ router.post('/cancel-by-client', protect, async (req, res) => {
     }
 });
 
-// Rota do Admin (sem alterações, mas deve ser protegida também)
-router.delete('/:id', async (req, res) => {
+// ============================================
+// DELETE - Cancelar agendamento (Admin - PROTEGIDA)
+// ============================================
+router.delete('/:id', protect, async (req, res) => {
     try {
         const appointment = await Appointment.findById(req.params.id);
         if (!appointment) return res.status(404).json({ error: 'Agendamento não encontrado' });
+        
         appointment.status = 'cancelled';
         appointment.deletedAt = new Date();
         await appointment.save();
+        
         req.app.get('io').emit('appointment-update', { type: 'cancelled', appointmentId: appointment._id });
         res.json({ success: true, message: 'Agendamento cancelado!' });
     } catch (error) {
         res.status(500).json({ error: 'Erro ao cancelar agendamento' });
     }
+});
+
+// ============================================
+// PATCH - Atualizar status do agendamento (Admin - PROTEGIDA)
+// ============================================
+router.patch('/:id/status', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Status é obrigatório' 
+      });
+    }
+    
+    // Validar status contra o Enum do Model
+    const validStatus = ['scheduled', 'confirmed', 'completed', 'cancelled'];
+    if (!validStatus.includes(status)) {
+        return res.status(400).json({ success: false, message: 'Status inválido.' });
+    }
+
+    const appointment = await Appointment.findById(id);
+    
+    if (!appointment) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Agendamento não encontrado' 
+      });
+    }
+
+    // REGRA: Não permitir cancelamento de agendamentos concluídos
+    if (appointment.status === 'completed' && status === 'cancelled') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Não é possível cancelar um agendamento já concluído' 
+      });
+    }
+
+    appointment.status = status;
+    if(status === 'cancelled' && !appointment.deletedAt) {
+        appointment.deletedAt = new Date();
+    }
+    
+    await appointment.save();
+
+    req.app.get('io').emit('appointment-update', {
+      type: 'updated',
+      appointment
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Status atualizado com sucesso',
+      appointment 
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar status:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao atualizar status',
+      error: error.message 
+    });
+  }
 });
 
 module.exports = router;
