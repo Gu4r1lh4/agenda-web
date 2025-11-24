@@ -1,33 +1,44 @@
 /* client/src/pages/ClientView/ClientView.css */
 
+:root {
+  --primary-color: #5a67d8;   /* Cor padrão (Roxo) */
+  --secondary-color: #4a4fb8;
+}
+
+/* --- Fundo Externo AGORA É CLARO --- */
 .client-view {
   max-width: 1000px;
   margin: 0 auto;
   padding: 2rem;
-  background: linear-gradient(180deg, #f8f9fc 0%, #e9ecf5 100%);
+  /* Fundo claro suave */
+  background: linear-gradient(180deg, #ffffff 0%, #f0f2f5 100%);
   min-height: 100vh;
+  transition: background 0.5s ease;
 }
 
+/* Header (onde fica o título e botão sair) */
 .header {
   text-align: center;
   margin-bottom: 3rem;
   padding-bottom: 2rem;
   position: relative;
-  background: white;
+  background: white; /* Mantém branco para destacar do fundo claro */
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border: 1px solid #e2e8f0;
 }
 
 .header h1 {
-  color: #2d3748;
   margin: 0;
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Texto colorido usando a variável */
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: var(--primary-color);
 }
 
 .btn-logout {
@@ -51,63 +62,75 @@
   box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
 }
 
+/* --- O CARD PRINCIPAL AGORA É COLORIDO --- */
 .booking-container {
-  background: white;
+  /* Fundo gradiente com a cor do tema */
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   padding: 2.5rem;
   border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  /* Sombra mais forte para destacar */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  /* Define a cor base do texto para BRANCO */
+  color: white;
 }
 
+/* Títulos dentro do card colorido ficam BRANCOS */
 .booking-container h2 {
   text-align: center;
   margin-top: 0;
   margin-bottom: 2.5rem;
-  color: #2d3748;
+  color: white;
   font-size: 1.8rem;
   font-weight: 700;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+/* Box de seleção de data - Estilo "Vidro" para ficar bonito no fundo colorido */
 .setup-section-simple {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 3rem;
   padding: 2rem;
-  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  background: rgba(255, 255, 255, 0.15); /* Branco semitransparente */
+  backdrop-filter: blur(5px);
   border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
 }
 
 .setup-section-simple label {
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  color: #2d3748;
+  color: white; /* Label branca */
 }
 
+/* Input de data - Mantém fundo branco para leitura fácil */
 .setup-section-simple input[type="date"] {
   padding: 1rem 1.5rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 12px;
   font-size: 1.1rem;
   min-width: 280px;
   text-align: center;
   transition: all 0.3s ease;
   background: white;
+  color: #2d3748; /* Texto escuro dentro do input branco */
 }
 
 .setup-section-simple input[type="date"]:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: white;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
 }
 
-/* Slots */
+/* Slots (Horários) */
 .slots-container h3 {
   margin-top: 0;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #e2e8f0;
-  color: #2d3748;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3); /* Borda clara */
+  color: white; /* Título branco */
   font-size: 1.3rem;
   font-weight: 600;
 }
@@ -115,7 +138,7 @@
 .slots-container h3 small {
   display: block;
   font-size: 0.9rem;
-  color: #718096;
+  color: rgba(255, 255, 255, 0.8); /* Texto de ajuda claro */
   font-weight: 400;
   margin-top: 6px;
 }
@@ -123,7 +146,7 @@
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #667eea;
+  color: white;
   font-style: italic;
   font-size: 1.1rem;
 }
@@ -131,10 +154,11 @@
 .no-slots {
   text-align: center;
   padding: 3rem;
-  color: #718096;
-  background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   font-size: 1.05rem;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
 }
 
 .slots-grid {
@@ -145,51 +169,54 @@
   margin-bottom: 2rem;
 }
 
+/* Botões de Horário - Adaptados para o fundo colorido */
 .slot-button {
   padding: 1rem;
   font-size: 1.05rem;
   font-weight: 600;
-  border: 2px solid #667eea;
-  background: linear-gradient(135deg, #f0f4ff 0%, #e9ecf5 100%);
-  color: #667eea;
+  border: 2px solid rgba(255, 255, 255, 0.5); /* Borda branca semitransparente */
+  background: rgba(255, 255, 255, 0.1); /* Fundo transparente */
+  color: white; /* Texto branco */
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .slot-button:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: white; /* Fundo fica branco ao passar o mouse */
+  color: var(--primary-color); /* Texto assume a cor do tema */
+  border-color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Horários ocupados no fundo colorido */
 .slot-button.occupied {
-  background: #f8f9fc;
-  border-color: #cbd5e0;
-  color: #a0aec0;
-  cursor: pointer;
+  background: rgba(0, 0, 0, 0.2); /* Fundo escuro transparente */
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(255, 255, 255, 0.4); /* Texto branco apagado */
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .slot-button.occupied:hover {
-  background: #e2e8f0;
-  color: #718096;
-  border-color: #a0aec0;
+  background: rgba(0, 0, 0, 0.25);
+  transform: none;
 }
 
-/* Booking Form */
+/* Formulário de Agendamento */
 .booking-form {
   margin-top: 3rem;
   padding-top: 3rem;
-  border-top: 2px dashed #e2e8f0;
+  border-top: 2px dashed rgba(255, 255, 255, 0.3); /* Borda tracejada clara */
 }
 
 .booking-form h3 {
   text-align: center;
   margin-top: 0;
   margin-bottom: 2rem;
-  color: #2d3748;
+  color: white; /* Título branco */
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -202,38 +229,40 @@
   display: block;
   margin-bottom: 0.7rem;
   font-weight: 600;
-  color: #2d3748;
+  color: white; /* Labels brancas */
   font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
+/* Inputs e Selects MANTÊM fundo branco para facilitar digitação */
 .form-group input,
 .form-group select {
   width: 100%;
   padding: 1rem 1.2rem;
-  border: 2px solid #e2e8f0;
+  border: 2px solid rgba(255,255,255,0.5);
   border-radius: 12px;
   box-sizing: border-box;
   font-size: 1rem;
   transition: all 0.3s ease;
-  background: #f8f9fc;
+  background: white; 
+  color: #2d3748; /* Texto escuro */
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
 }
 
 .form-group input:disabled,
 .form-group select:disabled {
-  background-color: #f8f9fc;
+  background-color: #e2e8f0;
   color: #a0aec0;
   cursor: not-allowed;
 }
 
-/* Modal Genérico */
+/* Modais Genéricos (Eles ficam sobre o overlay escuro, então mantêm o padrão de card branco) */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -255,24 +284,20 @@
 }
 
 .modal-content {
-  background: white;
+  background: white; /* Modal continua branco */
   padding: 2.5rem 3rem;
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   width: 90%;
   max-width: 550px;
   animation: slideUp 0.4s ease;
+  text-align: center;
+  color: #2d3748; /* Texto escuro dentro do modal branco */
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-content h2 {
@@ -297,9 +322,12 @@
   justify-content: flex-end;
 }
 
+/* Botões de Ação Genéricos */
 .modal-actions .btn-back,
 .modal-actions .btn-confirm-cancel,
-.modal-actions .submit-button {
+.modal-actions .submit-button,
+.booking-form .submit-button,
+.booking-form .btn-back {
   padding: 0.9rem 1.5rem;
   border: none;
   border-radius: 12px;
@@ -309,30 +337,43 @@
   transition: all 0.3s ease;
 }
 
-.modal-actions .btn-back {
+/* Botão Voltar (estilo padrão cinza) */
+.btn-back {
   background: #f8f9fc;
   color: #718096;
   border: 2px solid #e2e8f0;
 }
-
-.modal-actions .btn-back:hover {
+.btn-back:hover {
   background: #e2e8f0;
   color: #2d3748;
 }
 
-.submit-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+/* Botão de Confirmar (Submit) DENTRO DO CARD COLORIDO */
+.booking-form .submit-button {
+    background: white;
+    color: var(--primary-color); /* Texto da cor do tema */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.booking-form .submit-button:hover {
+    background: #f8f9fc;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
-.submit-button:hover {
+/* Botão de Confirmar (Submit) DENTRO DOS MODAIS BRANCOS */
+.modal-content .submit-button {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+.modal-content .submit-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .submit-button:disabled {
-  background: #cbd5e0;
+  background: #cbd5e0 !important;
+  color: white !important;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -352,7 +393,7 @@
 /* Alertas */
 .alert-error {
   color: #c53030;
-  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+  background: #fff5f5;
   border: 2px solid #fc8181;
   padding: 1rem 1.2rem;
   border-radius: 12px;
@@ -362,7 +403,7 @@
 
 .alert-success {
   color: #2f855a;
-  background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+  background: #f0fff4;
   border: 2px solid #68d391;
   padding: 1rem 1.2rem;
   border-radius: 12px;
@@ -370,13 +411,14 @@
   font-weight: 500;
 }
 
-/* Modal de Confirmação */
+/* Detalhes do Agendamento (nos modais) */
 .booking-details {
   background: linear-gradient(135deg, #f8f9fc 0%, #e9ecf5 100%);
   border: 2px solid #e2e8f0;
   padding: 1.5rem;
   border-radius: 12px;
   margin: 1.5rem 0;
+  text-align: center;
 }
 
 .booking-details p {
@@ -385,23 +427,32 @@
   font-size: 1.05rem;
 }
 
+/* Botão Full Width */
+.btn-block {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 1rem;
+  font-size: 1.1rem;
+}
+
+/* Botão Fechar do Modal de Sucesso */
 .close-button {
   width: 100%;
   padding: 1rem;
   font-size: 1.05rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: white;
   border: none;
   border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .close-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* Modal de Login */
@@ -460,4 +511,31 @@
   .modal-content {
     padding: 2rem 1.5rem;
   }
+} 
+
+/* ESTILOS DO MODAL DE DESFAZER (UNDO) */
+.undo-icon-container {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.timer-countdown {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #e53e3e;
+  margin-top: 0.5rem;
+}
+
+.undo-hint {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: #718096;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  80% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }

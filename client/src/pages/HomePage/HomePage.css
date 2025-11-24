@@ -1,16 +1,22 @@
 /* client/src/pages/HomePage/HomePage.css */
 
+:root {
+  --primary-color: #5a67d8;
+  --secondary-color: #4a4fb8;
+}
+
 .homepage-container {
-  background: #5a67d8;
+  background: var(--primary-color); /* Cor dinâmica */
   min-height: 100vh;
   height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  transition: background 0.5s ease;
 }
 
-/* Ondas fluidas no background - Estilo exato da imagem */
+/* Ondas fluidas no background */
 .homepage-container::before {
   content: '';
   position: absolute;
@@ -20,14 +26,11 @@
   bottom: 0;
   background: 
     linear-gradient(180deg, 
-      #7c8adb 0%,
-      #6b7bd8 20%,
-      #5a67d8 40%,
-      #5961c9 60%,
-      #4a4fb8 80%,
-      #3d3fa8 100%
+      var(--primary-color) 0%,
+      var(--secondary-color) 100%
     );
   z-index: 0;
+  opacity: 0.8;
 }
 
 .homepage-container::after {
@@ -38,12 +41,12 @@
   right: 0;
   bottom: 0;
   background-image: 
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 800' preserveAspectRatio='none'%3E%3Cpath fill='%234a4fb8' fill-opacity='0.4' d='M0,400 C240,450 480,350 720,400 C960,450 1200,350 1440,400 L1440,800 L0,800 Z'%3E%3C/path%3E%3Cpath fill='%233d3fa8' fill-opacity='0.4' d='M0,500 C240,450 480,550 720,500 C960,450 1200,550 1440,500 L1440,800 L0,800 Z'%3E%3C/path%3E%3Cpath fill='%232d2f88' fill-opacity='0.3' d='M0,600 C360,550 720,650 1080,600 C1200,580 1320,620 1440,600 L1440,800 L0,800 Z'%3E%3C/path%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 800' preserveAspectRatio='none'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,400 C240,450 480,350 720,400 C960,450 1200,350 1440,400 L1440,800 L0,800 Z'%3E%3C/path%3E%3C/svg%3E");
   background-size: 100% 100%;
   background-repeat: no-repeat;
   background-position: bottom;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
 /* Seção Principal (Hero) */
@@ -66,14 +69,8 @@
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .content h1 {
@@ -115,7 +112,7 @@
 }
 
 .btn-primary {
-  background: #48bb78;
+  background: #48bb78; /* Ação (Verde) - Mantido */
   color: white;
   border: none;
 }
@@ -128,7 +125,7 @@
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.95);
-  color: #5a67d8;
+  color: var(--primary-color); /* Texto na cor do tema */
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
@@ -183,7 +180,7 @@
 .feature-card h3 {
   font-size: 1.15rem;
   margin-bottom: 12px;
-  color: #2d3748;
+  color: var(--primary-color); /* Título com cor do tema */
   font-weight: 700;
 }
 
@@ -198,7 +195,7 @@
 .footer {
   width: 100%;
   padding: 20px;
-  background: rgba(45, 47, 136, 0.4);
+  background: rgba(0, 0, 0, 0.2);
   color: rgba(255, 255, 255, 0.9);
   text-align: center;
   position: relative;
@@ -271,5 +268,14 @@
   
   .feature-card {
     padding: 25px 20px;
+  }
+
+  .company-logo {
+  max-width: 180px;       /* Limite de largura */
+  max-height: 100px;      /* Limite de altura */
+  margin-bottom: 20px;    /* Espaço antes do título */
+  object-fit: contain;    /* Garante que a imagem não distorça */
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); /* Sombra suave para destacar no fundo colorido */
+  animation: fadeInUp 0.6s ease-out;
   }
 }

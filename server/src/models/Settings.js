@@ -54,6 +54,11 @@ const settingsSchema = new mongoose.Schema({
     start: { type: String, default: '08:00' },
     end: { type: String, default: '18:00' }
   },
+  // --- NOVO: Array para bloquear horários específicos ---
+  blockedSlots: [{
+    date: String, // Formato YYYY-MM-DD
+    times: [String] // Array de horários ex: ["09:00", "14:00"]
+  }],
   slotDuration: { 
     type: Number, 
     default: 60 

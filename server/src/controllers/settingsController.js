@@ -39,6 +39,7 @@ exports.getSettings = async (req, res) => {
           start: '08:00',
           end: '18:00'
         },
+        blockedSlots: [], // Adicionado valor padrão
         slotDuration: 60
       });
       
@@ -66,7 +67,8 @@ exports.updateSettings = async (req, res) => {
       homePageCards,
       services,
       workingHours,
-      slotDuration
+      slotDuration,
+      blockedSlots // <--- ADICIONADO AQUI
     } = req.body;
     
     let settings = await Settings.findOne();
@@ -83,6 +85,9 @@ exports.updateSettings = async (req, res) => {
     if (services !== undefined) settings.services = services;
     if (workingHours !== undefined) settings.workingHours = workingHours;
     if (slotDuration !== undefined) settings.slotDuration = slotDuration;
+    
+    // --- ADICIONADO AQUI: Salva os bloqueios ---
+    if (blockedSlots !== undefined) settings.blockedSlots = blockedSlots;
     
     await settings.save();
     

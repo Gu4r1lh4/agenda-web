@@ -1,0 +1,80 @@
+/* src/utils/Toast.css */
+
+/* Adicionei isso para posicionar o grupo de toasts */
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* O restante é o seu CSS original com pequenos ajustes */
+.toast {
+  /* Removi o position: fixed daqui, pois o container já controla a posição */
+  min-width: 300px;
+  max-width: 500px;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: slideIn 0.3s ease-out;
+  pointer-events: all;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.toast-success { background-color: #4caf50; color: white; }
+.toast-error { background-color: #f44336; color: white; }
+.toast-warning { background-color: #ff9800; color: white; }
+.toast-info { background-color: #2196f3; color: white; }
+
+.toast-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.toast-action {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  margin-left: 8px;
+  transition: all 0.2s;
+}
+
+.toast-action:hover { background: rgba(255, 255, 255, 0.3); }
+
+.toast-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 12px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.toast-close:hover { opacity: 1; }
